@@ -1,0 +1,21 @@
+**/Gemfile.lock
+**/.yardoc
+**/doc
+**/docs
+**/coverage
+**/pkg
+**/*.gem
+**/.bundle
+**/.DS_Store
+**/.byebug_history
+
+# Appraisals
+instrumentation/**/*.gemfile.lock
+
+# Vendored gems
+**/vendor/**/*
+
+#rvm files
+.ruby-gemset
+.ruby-version
+
