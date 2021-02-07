@@ -25,18 +25,18 @@ OpenTelemetry::SDK.configure do |c|
   c.use 'EpsagonSinatraInstrumentation'
   c.use 'EpsagonNetHTTPInstrumentation'
   c.use 'EpsagonFaradayInstrumentation'
-  if debug?
+  # if ENV['EPSAGON_BACKEND']
     c.add_span_processor OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(
-      OpenTelemetry::SDK::Trace::Export::ConsoleSpanExporter.new
-    )
-  else
-    c.add_span_processor OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(
-      EpsagonExporter.new(headers: {
+      OpenTelemetry::Exporter::OTLP::Exporter.new(headers: {
                             epasgon_token: ENV['EPSAGON_TOKEN'],
                             epasgon_app_name: ENV['EPSAGON_APP_NAME']
                           },
-                          endpoint: '7fybd5lgpc.execute-api.us-east-2.amazonaws.com:443/dev/trace',
-                          insecure: false)
+                          endpoint: ENV['EPSAGON_BACKEND'],
+                          insecure: true)
     )
-  end
+  # else
+  #   c.add_span_processor OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(
+  #     OpenTelemetry::SDK::Trace::Export::ConsoleSpanExporter.new
+  #   )
+  # end
 end
