@@ -1,0 +1,39 @@
+name: Lint and Test
+
+on: [push, pull_request]
+  push:
+    paths:
+    - '**'
+  pull_request:
+    paths:
+    - '**'
+
+jobs:
+  build:
+    name: CI
+    runs-on: ubuntu-latest
+    env:
+      api-dir: ./api 
+
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/setup-ruby@v1
+        with:
+          ruby-version: 2.7.2
+
+      - name: Run bundle install
+        working-directory: ./
+        run: |
+          gem install bundler
+          bundle install --jobs 4 --retry 3
+
+      - name: Build and test with rspec
+        working-directory: ./
+        env:
+          EPSAGON_BACKEND: localhost:4568/
+          EPSAGON_METADATA: False
+        run: rspec spec
+      - name: Install Rubocop
+        run: gem install rubocop
+      - name: Check code
+        run: rubocop -A
