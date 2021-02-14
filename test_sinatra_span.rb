@@ -2,7 +2,7 @@
 
 require 'sinatra'
 require './lib/epsagon'
-require 'JSON'
+require 'json'
 
 post '/*' do
   JSON.generate({body: request.body.read, path: request.path})

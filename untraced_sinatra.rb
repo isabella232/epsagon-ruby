@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'sinatra'
-require 'JSON'
+require 'json'
 
 set port: 4566
 
