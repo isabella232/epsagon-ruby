@@ -20,7 +20,7 @@ def debug?
   ENV['EPSAGON_DEBUG']&.to_s&.downcase == 'true'
 end
 
-# #config opentelemetry with epsaon extensions:
+# config opentelemetry with epsaon extensions:
 OpenTelemetry::SDK.configure do |c|
   c.use 'EpsagonSinatraInstrumentation'
   c.use 'EpsagonNetHTTPInstrumentation'

@@ -19,7 +19,9 @@ RSpec.describe do
     it 'gets request data correctly' do
       `curl -X POST http://localhost:4567/foo/bar -d "amir=asdasd"`
       received_message = File.open('tmp/body.pb', &:read)
-      decoded_message = Opentelemetry::Proto::Collector::Trace::V1::ExportTraceServiceRequest.decode(received_message).to_h
+      decoded_message = Opentelemetry::Proto::Collector::Trace::V1::ExportTraceServiceRequest.decode(
+        received_message
+      ).to_h
       attributes = decoded_message[:resource_spans][0][:instrumentation_library_spans][0][:spans][0][:attributes]
       attr_hash = Hash[attributes.collect { |a| [a[:key], a[:value]] }]
 

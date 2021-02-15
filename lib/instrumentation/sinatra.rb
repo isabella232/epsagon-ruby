@@ -5,6 +5,7 @@ require 'opentelemetry'
 
 require_relative '../util'
 
+# Sinatra middleware for epsagon instrumentation
 class EpsagonTracerMiddleware
   def initialize(app)
     @app = app
@@ -79,6 +80,7 @@ class EpsagonTracerMiddleware
   end
 end
 
+# Sinatra extension for epsagon instrumentation
 module EpsagonTracerExtension
   # Sinatra hook after extension is registered
   def self.registered(app)
@@ -100,6 +102,7 @@ module EpsagonTracerExtension
   end
 end
 
+# Sinatra epsagon instrumentation
 class EpsagonSinatraInstrumentation < OpenTelemetry::Instrumentation::Base
   install do |_|
     ::Sinatra::Base.register EpsagonTracerExtension

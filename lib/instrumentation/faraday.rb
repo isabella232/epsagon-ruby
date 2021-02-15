@@ -3,6 +3,7 @@
 require 'faraday'
 require_relative '../util'
 
+# Faraday middleware for epsagon instrumentaton
 class EpsagonFaradayMiddleware < ::Faraday::Middleware
   HTTP_METHODS_SYMBOL_TO_STRING = {
     connect: 'CONNECT',
@@ -69,6 +70,7 @@ class EpsagonFaradayMiddleware < ::Faraday::Middleware
   end
 end
 
+# Patch faraday to include middleware
 module EpsagonFaradayPatch
   def adapter(*args)
     use(:epsagon_open_telemetry) unless @handlers.any? do |handler|
@@ -79,6 +81,7 @@ module EpsagonFaradayPatch
   end
 end
 
+# Faraday epsagon instrumentaton
 class EpsagonFaradayInstrumentation < OpenTelemetry::Instrumentation::Base
   install do |_config|
     ::Faraday::Middleware.register_middleware(

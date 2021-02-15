@@ -3,6 +3,7 @@
 Gem::Specification.new do |s|
   s.name        = 'epsagon'
   s.version     = '0.0.0'
+  s.required_ruby_version = '~> 2.7'
   s.summary     = 'Epsagon for ruby'
   s.description = 'Epsagon for ruby'
   s.authors     = ['Assaf Paneth']

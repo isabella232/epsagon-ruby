@@ -4,6 +4,7 @@ require 'opentelemetry'
 
 require_relative '../util'
 
+# Net::HTTP patch for epsagon instrumentaton
 module EpsagonNetHTTPExtension
   HTTP_METHODS_TO_SPAN_NAMES = Hash.new { |h, k| h[k] = "HTTP #{k}" }
   USE_SSL_TO_SCHEME = { false => 'http', true => 'https' }.freeze
@@ -67,6 +68,7 @@ module EpsagonNetHTTPExtension
   end
 end
 
+# Net::HTTP epsagon instrumentaton
 class EpsagonNetHTTPInstrumentation < OpenTelemetry::Instrumentation::Base
   install do |_|
     ::Net::HTTP.prepend(EpsagonNetHTTPExtension)

@@ -2,6 +2,7 @@
 
 require 'cgi'
 
+# Utilities for epsagon opentelemetry solution
 module Util
   def self.epsagon_query_attributes(query_string)
     if query_string&.include? '='
