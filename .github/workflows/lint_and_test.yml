@@ -36,4 +36,4 @@ jobs:
       - name: Install Rubocop
         run: gem install rubocop
       - name: Check code
-        run: rubocop -A
+        run: rubocop
