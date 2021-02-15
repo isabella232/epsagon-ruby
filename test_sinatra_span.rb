@@ -5,5 +5,5 @@ require './lib/epsagon'
 require 'json'
 
 post '/*' do
-  JSON.generate({body: request.body.read, path: request.path})
+  JSON.generate({ body: request.body.read, path: request.path })
 end

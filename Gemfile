@@ -19,4 +19,4 @@ gem 'opentelemetry-exporter-otlp', '~> 0.11.0'
 
 gem 'faraday', '~> 1.3'
 
-gem "rspec", "~> 3.10"
+gem 'rspec', '~> 3.10'

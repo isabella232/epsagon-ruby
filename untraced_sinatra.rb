@@ -6,5 +6,5 @@ require 'json'
 set port: 4566
 
 post '/*' do
-  JSON.generate({body: request.body.read, path: request.path})
+  JSON.generate({ body: request.body.read, path: request.path })
 end

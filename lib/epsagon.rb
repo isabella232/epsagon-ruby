@@ -26,14 +26,14 @@ OpenTelemetry::SDK.configure do |c|
   c.use 'EpsagonNetHTTPInstrumentation'
   c.use 'EpsagonFaradayInstrumentation'
   # if ENV['EPSAGON_BACKEND']
-    c.add_span_processor OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(
-      OpenTelemetry::Exporter::OTLP::Exporter.new(headers: {
-                            epasgon_token: ENV['EPSAGON_TOKEN'],
-                            epasgon_app_name: ENV['EPSAGON_APP_NAME']
-                          },
-                          endpoint: ENV['EPSAGON_BACKEND'],
-                          insecure: true)
-    )
+  c.add_span_processor OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(
+    OpenTelemetry::Exporter::OTLP::Exporter.new(headers: {
+                                                  epasgon_token: ENV['EPSAGON_TOKEN'],
+                                                  epasgon_app_name: ENV['EPSAGON_APP_NAME']
+                                                },
+                                                endpoint: ENV['EPSAGON_BACKEND'],
+                                                insecure: true)
+  )
   # else
   #   c.add_span_processor OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(
   #     OpenTelemetry::SDK::Trace::Export::ConsoleSpanExporter.new
