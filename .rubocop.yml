@@ -7,3 +7,7 @@ Metrics/AbcSize:
   Enabled: false
 Metrics/BlockLength:
   Enabled: false
+Style/ClassVars:
+  Enabled: false
+Metrics/ClassLength:
+  Enabled: false

@@ -9,6 +9,10 @@ module EpsagonNetHTTPExtension
   HTTP_METHODS_TO_SPAN_NAMES = Hash.new { |h, k| h[k] = "HTTP #{k}" }
   USE_SSL_TO_SCHEME = { false => 'http', true => 'https' }.freeze
 
+  def config
+    EpsagonNetHTTPInstrumentation.instance.config
+  end
+
   def request(req, body = nil, &block)
     # Do not trace recursive call for starting the connection
     return super(req, body, &block) unless started?
@@ -23,7 +27,7 @@ module EpsagonNetHTTPExtension
                         'http.request.path' => path
                       })
 
-    unless metadata_only?
+    unless config[:epsagon][:metadata_only]
       headers = Hash[req.each_header.to_a]
       attributes.merge!({
                           'http.request.path_params' => path_params,
@@ -54,7 +58,7 @@ module EpsagonNetHTTPExtension
     status_code = response.code.to_i
 
     span.set_attribute('http.status_code', status_code)
-    unless metadata_only?
+    unless config[:epsagon][:metadata_only]
       span.set_attribute('http.response.headers', Hash[response.each_header.to_a].to_json)
       span.set_attribute('http.response.body', response.body)
     end
@@ -70,6 +74,8 @@ end
 
 # Net::HTTP epsagon instrumentaton
 class EpsagonNetHTTPInstrumentation < OpenTelemetry::Instrumentation::Base
+  VERSION = '0.0.0'
+
   install do |_|
     ::Net::HTTP.prepend(EpsagonNetHTTPExtension)
   end

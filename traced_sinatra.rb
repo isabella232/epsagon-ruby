@@ -5,7 +5,7 @@ require './lib/epsagon'
 require 'json'
 require 'net/http'
 
-Epsagon.init(metadata_only: true, debug: true)
+Epsagon.init(metadata_only: false, debug: true, backend: 'localhost:4568/test/trace/path', insecure: true)
 
 OpenTelemetry::SDK.configure do |c|
   c.add_span_processor OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(
@@ -13,7 +13,6 @@ OpenTelemetry::SDK.configure do |c|
   )
 end
 
-get '/*' do
-  # Net::HTTP.get('example.com', '/index.html')
+post '/*' do
   JSON.generate({ body: request.body.read, path: request.path })
 end

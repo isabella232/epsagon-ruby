@@ -5,6 +5,10 @@ require_relative '../util'
 
 # Faraday middleware for epsagon instrumentaton
 class EpsagonFaradayMiddleware < ::Faraday::Middleware
+  def config
+    EpsagonFaradayInstrumentation.instance.config
+  end
+
   HTTP_METHODS_SYMBOL_TO_STRING = {
     connect: 'CONNECT',
     delete: 'DELETE',
@@ -28,7 +32,7 @@ class EpsagonFaradayMiddleware < ::Faraday::Middleware
       'http.request.path' => path
     }
 
-    unless metadata_only?
+    unless config[:epsagon][:metadata_only]
       attributes.merge!(Util.epsagon_query_attributes(env.url.query))
       attributes.merge!({
                           'http.request.path_params' => path_params,
@@ -60,7 +64,7 @@ class EpsagonFaradayMiddleware < ::Faraday::Middleware
   def trace_response(span, response)
     span.set_attribute('http.status_code', response.status)
 
-    unless metadata_only?
+    unless config[:epsagon][:metadata_only]
       span.set_attribute('http.response.headers', response.headers.to_json)
       span.set_attribute('http.response.body', response.body)
     end
@@ -83,11 +87,13 @@ end
 
 # Faraday epsagon instrumentaton
 class EpsagonFaradayInstrumentation < OpenTelemetry::Instrumentation::Base
+  VERSION = '0.0.0'
+
   install do |_config|
     ::Faraday::Middleware.register_middleware(
       epsagon_open_telemetry: EpsagonFaradayMiddleware
     )
-    ::Faraday::RackBuilder.prepend(EpsagonFaradayPatch)
+    ::Faraday::RackBuilder.include(EpsagonFaradayPatch)
   end
 
   present do

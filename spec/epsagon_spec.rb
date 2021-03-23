@@ -10,7 +10,7 @@ RSpec.describe do
     Dir.mkdir('tmp') unless File.exist?('tmp')
     File.delete('tmp/body.pb') if File.exist?('tmp/body.pb')
     pids[:backend] = spawn 'ruby mock_backend.rb'
-    pids[:traced_app] = spawn 'ruby test_sinatra_span.rb'
+    pids[:traced_app] = spawn 'ruby traced_sinatra.rb'
     pids[:untraced_app] = spawn 'ruby untraced_sinatra.rb'
     sleep 3
   end

@@ -11,6 +11,10 @@ class EpsagonTracerMiddleware
     @app = app
   end
 
+  def config
+    EpsagonSinatraInstrumentation.instance.config
+  end
+
   def call(env)
     request = Rack::Request.new(env)
     path, path_params = request.path.split(';')
@@ -28,7 +32,7 @@ class EpsagonTracerMiddleware
       'http.request.headers' => request_headers
     }
 
-    unless metadata_only?
+    unless config[:epsagon][:metadata_only]
       request.body.rewind
       request_body = request.body.read
       request.body.rewind
@@ -69,7 +73,7 @@ class EpsagonTracerMiddleware
   def trace_response(http_span, framework_span, env, resp)
     status, headers, response_body = resp
 
-    unless metadata_only?
+    unless config[:epsagon][:metadata_only]
       http_span.set_attribute('http.response.headers', JSON.generate(headers))
       http_span.set_attribute('http.response.body', response_body.join)
     end
@@ -104,6 +108,8 @@ end
 
 # Sinatra epsagon instrumentation
 class EpsagonSinatraInstrumentation < OpenTelemetry::Instrumentation::Base
+  VERSION = '0.0.0'
+
   install do |_|
     ::Sinatra::Base.register EpsagonTracerExtension
   end
