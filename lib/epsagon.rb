@@ -39,15 +39,15 @@ module Epsagon
 
   def epsagon_confs(configurator)
     configurator.resource = OpenTelemetry::SDK::Resources::Resource.telemetry_sdk.merge(
-      OpenTelemetry::SDK::Resources::Resource.create({ 'epasgon_app_name' => ENV['EPSAGON_APP_NAME'] })
+      OpenTelemetry::SDK::Resources::Resource.create({ 'application' => ENV['EPSAGON_APP_NAME'] })
     )
     configurator.use 'EpsagonSinatraInstrumentation', { epsagon: @@epsagon_config }
     configurator.use 'EpsagonNetHTTPInstrumentation', { epsagon: @@epsagon_config }
     configurator.use 'EpsagonFaradayInstrumentation', { epsagon: @@epsagon_config }
     # if ENV['EPSAGON_BACKEND']
-    configurator.add_span_processor OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(
-      OpenTelemetry::Exporter::OTLP::Exporter.new(headers: {
-                                                    'x-epasgon-token' => @@epsagon_config[:token]
+    configurator.add_span_processor OpenTelemetry::SDK::Trace::Export::BatchSpanProcessor.new(
+      exporter: OpenTelemetry::Exporter::OTLP::Exporter.new(headers: {
+                                                    'x-epsagon-token' => @@epsagon_config[:token]
                                                   },
                                                   endpoint: @@epsagon_config[:backend],
                                                   insecure: @@epsagon_config[:insecure] || false)
