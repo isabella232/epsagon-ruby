@@ -68,7 +68,7 @@ module EpsagonNetHTTPExtension
   end
 
   def tracer
-    EpsagonSinatraInstrumentation.instance.tracer
+    EpsagonNetHTTPInstrumentation.instance.tracer
   end
 end
 
