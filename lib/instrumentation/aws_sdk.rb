@@ -12,10 +12,12 @@ end
 # Generates Spans for all uses of AWS SDK
 class EpsagonAwsHandler < Seahorse::Client::Handler
   def call(context)
-    span_name = "AWS #{context[:service_name]}"
-    tracer.in_span(span_name) do |span|
+    tracer.in_span('') do |span|
       @handler.call(context).tap do
-        span.set_attribute('aws.command', context[:command])
+        span.set_attribute('aws.operation', context[:command])
+        span.set_attribute('aws.status_code', context[:status_code])
+        span.set_attribute('aws.service', context[:service_name])
+        span.set_attribute('aws.account_id', context[:account_id])
         span.set_attribute('aws.status_code', context[:status_code])
       end
     end

@@ -3,7 +3,8 @@
 require 'rubygems'
 require 'net/http'
 require 'bundler/setup'
-require 'opentelemetry'
+require 'opentelemetry/sdk'
+require 'opentelemetry/exporter/otlp'
 
 require_relative 'instrumentation/sinatra'
 require_relative 'instrumentation/net_http'
@@ -41,11 +42,11 @@ module Epsagon
 
     if @@epsagon_config[:debug]
       configurator.add_span_processor OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(
-      OpenTelemetry::Exporter::OTLP::Exporter.new(headers: {
-                                                    'x-epsagon-token' => @@epsagon_config[:token]
-                                                  },
-                                                  endpoint: @@epsagon_config[:backend],
-                                                  insecure: @@epsagon_config[:insecure] || false)
+        OpenTelemetry::Exporter::OTLP::Exporter.new(headers: {
+                            'x-epsagon-token' => @@epsagon_config[:token]
+                          },
+                          endpoint: @@epsagon_config[:backend],
+                          insecure: @@epsagon_config[:insecure] || false)
       )
 
       configurator.add_span_processor OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(

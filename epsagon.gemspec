@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |s|
   s.name        = 'epsagon'
-  s.version     = '0.0.2'
+  s.version     = '0.0.9'
   s.required_ruby_version = '>=2.0.0'
   s.summary     = 'Epsagon provides tracing to Ruby applications for the collection of distributed tracing and performance metrics.'
   s.description = <<-EOS.gsub(/^[\s]+/, '')
@@ -14,4 +14,9 @@ Gem::Specification.new do |s|
   s.require_paths = ['lib']
   s.homepage = 'https://github.com/epsagon/epsagon-ruby'
   s.license = 'MIT'
+  s.add_runtime_dependency  'opentelemetry-api', '~> 0.11.0'
+  s.add_runtime_dependency  'opentelemetry-sdk', '~> 0.11.1'
+  s.add_runtime_dependency  'opentelemetry-instrumentation-sinatra', '~> 0.11.0'
+  s.add_runtime_dependency  'opentelemetry-exporter-otlp', '~> 0.11.0'
+
 end

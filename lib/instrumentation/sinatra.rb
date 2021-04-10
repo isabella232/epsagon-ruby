@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'sinatra'
 require 'opentelemetry'
 
 require_relative '../util'
