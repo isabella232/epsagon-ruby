@@ -2,32 +2,6 @@
 
 require_relative '../util'
 
-# AWS SDK plugin for epsagon instrumentation
-class EpsagonAwsPlugin < Seahorse::Client::Plugin
-  def add_handlers(handlers, _)
-    handlers.add(EpsagonAwsHandler, step: :validate)
-  end
-end
-
-# Generates Spans for all uses of AWS SDK
-class EpsagonAwsHandler < Seahorse::Client::Handler
-  def call(context)
-    tracer.in_span('') do |span|
-      @handler.call(context).tap do
-        span.set_attribute('aws.operation', context[:command])
-        span.set_attribute('aws.status_code', context[:status_code])
-        span.set_attribute('aws.service', context[:service_name])
-        span.set_attribute('aws.account_id', context[:account_id])
-        span.set_attribute('aws.status_code', context[:status_code])
-      end
-    end
-  end
-
-  def tracer
-    EpsagonAwsSdkInstrumentation.instance.tracer
-  end
-end
-
 # AWS SDK epsagon instrumentation
 class EpsagonAwsSdkInstrumentation < OpenTelemetry::Instrumentation::Base
   VERSION = '0.0.0'
@@ -143,6 +117,7 @@ class EpsagonAwsSdkInstrumentation < OpenTelemetry::Instrumentation::Base
   ].freeze
 
   install do |_|
+    require_relative 'aws_sdk_plugin'
     ::Seahorse::Client::Base.add_plugin(EpsagonAwsPlugin)
     loaded_constants.each { |klass| klass.add_plugin(EpsagonAwsPlugin) }
   end
