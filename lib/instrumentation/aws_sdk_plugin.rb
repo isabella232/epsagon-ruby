@@ -1,5 +1,10 @@
 require 'aws-sdk-core'
+require 'opentelemetry/common'
+require 'opentelemetry/sdk'
 
+def untraced
+  OpenTelemetry::Trace.with_span(OpenTelemetry::Trace::Span.new) { yield }
+end
 # AWS SDK plugin for epsagon instrumentation
 class EpsagonAwsPlugin < Seahorse::Client::Plugin
   def add_handlers(handlers, _)
@@ -11,11 +16,13 @@ end
 class EpsagonAwsHandler < Seahorse::Client::Handler
   def call(context)
     tracer.in_span('') do |span|
-      @handler.call(context).tap do
-        span.set_attribute('aws.service', context.client.class.to_s.split('::')[1].downcase)
-        span.set_attribute('aws.aws.operation', context.operation.name)
-        span.set_attribute('aws.region', context.client.config.region)
-        span.set_attribute('aws.status_code', context.http_response.status_code)
+      untraced do
+        @handler.call(context).tap do
+          span.set_attribute('aws.service', context.client.class.to_s.split('::')[1].downcase)
+          span.set_attribute('aws.aws.operation', context.operation.name)
+          span.set_attribute('aws.region', context.client.config.region)
+          span.set_attribute('aws.status_code', context.http_response.status_code)
+        end
       end
     end
   end
