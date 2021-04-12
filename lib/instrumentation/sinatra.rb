@@ -48,7 +48,7 @@ class EpsagonTracerMiddleware
     tracer.in_span(
       env['HTTP_HOST'],
       attributes: attributes,
-      kind: :Server,
+      kind: :server,
       with_parent: parent_context(env)
     ) do |http_span|
       tracer.in_span('sinatra') do |framework_span|
