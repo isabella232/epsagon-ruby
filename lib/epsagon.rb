@@ -10,6 +10,7 @@ require_relative 'instrumentation/sinatra'
 require_relative 'instrumentation/net_http'
 require_relative 'instrumentation/faraday'
 require_relative 'instrumentation/aws_sdk'
+require_relative 'instrumentation/rails'
 require_relative 'util'
 
 Bundler.require
@@ -41,6 +42,7 @@ module Epsagon
     configurator.use 'EpsagonNetHTTPInstrumentation', { epsagon: @@epsagon_config }
     configurator.use 'EpsagonFaradayInstrumentation', { epsagon: @@epsagon_config }
     configurator.use 'EpsagonAwsSdkInstrumentation', { epsagon: @@epsagon_config }
+    configurator.use 'EpsagonRailsInstrumentation', { epsagon: @@epsagon_config }
 
     if @@epsagon_config[:debug]
       configurator.add_span_processor OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(

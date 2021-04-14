@@ -22,3 +22,5 @@ gem 'rspec', '~> 3.10'
 gem "aws-sdk-core", "~> 3.113"
 
 gem "rack", "~> 2.2"
+
+gem "rails", "~> 6.1"

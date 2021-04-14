@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |s|
   s.name        = 'epsagon'
-  s.version     = '0.0.10'
+  s.version     = '0.0.12'
   s.required_ruby_version = '>=2.0.0'
   s.summary     = 'Epsagon provides tracing to Ruby applications for the collection of distributed tracing and performance metrics.'
   s.description = <<-EOS.gsub(/^[\s]+/, '')
