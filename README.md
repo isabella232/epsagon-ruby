@@ -56,9 +56,12 @@ tracer.in_span('my-task') do |span|
   span.set_attribute('task_attribute', true)
   span.set_attribute('another_task_attribute', 42)
   span.set_attribute('yet_another_task_attribute', 'Attirbute value.')
+  start_my_task()
   tracer.in_span('inner-task') do |child_span|
+    do_traced_subtask()
     child_span.set_attribute('inner_span_attr', 'inner_span_attr value')
   end
+  finish_my_task()
 end
 
 
