@@ -41,6 +41,29 @@ export EPSAGON_APP_NAME=<app-name-stage>
 
 When using inside a `Dockerfile`, you can use `ENV` instead of `export`.
 
+###Custom traces:
+
+Since Epsagon for ruby is based on [Opentelemetry](https://github.com/open-telemetry/opentelemetry-ruby), opentelemetry features can be used to trace custom tasks:
+
+```ruby
+require 'epsagon'
+
+epsagon.init()
+
+tracer = OpenTelemetry.tracer_provider.tracer('send-test-spans', '0.1.0')
+
+tracer.in_span('my-task') do |span|
+  span.set_attribute('task_attribute', true)
+  span.set_attribute('another_task_attribute', 42)
+  span.set_attribute('yet_another_task_attribute', 'Attirbute value.')
+  tracer.in_span('inner-task') do |child_span|
+    child_span.set_attribute('inner_span_attr', 'inner_span_attr value')
+  end
+end
+
+
+```
+
 
 ## Integrations
 
