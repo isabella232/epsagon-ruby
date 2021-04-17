@@ -23,7 +23,7 @@ gem install epsagon
 ## Usage
 **Important: Epsagon is activated and instruments the supported libraries once the module is imported.**
 
-###Auto Tracing:
+### Auto Tracing:
 
 To enable automatic tracing on the supported libraries, add this snippet to your code:
 ```ruby
@@ -41,7 +41,7 @@ export EPSAGON_APP_NAME=<app-name-stage>
 
 When using inside a `Dockerfile`, you can use `ENV` instead of `export`.
 
-###Custom traces:
+### Custom traces:
 
 Since Epsagon for ruby is based on [Opentelemetry](https://github.com/open-telemetry/opentelemetry-ruby), opentelemetry features can be used to trace custom tasks:
 
@@ -78,7 +78,7 @@ Epsagon provides out-of-the-box instrumentation (tracing) for some popular frame
 |aws-sdk             |>=2.0.0                    |
 
 
-##Configuration:
+## Configuration:
 
 The same settings from the environment variables and additional parameters can be set on initialization, e.g.:
 
