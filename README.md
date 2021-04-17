@@ -32,11 +32,11 @@ require 'epsagon'
 epsagon.init()
 ```
 
-Set tho token and app name and run your ruby command:
+Set the token and app name, and run your ruby command:
 ```sh
-export EPSAGON_TOKEN=<epsagon-token>
-export EPSAGON_APP_NAME=<app-name-stage>
-<ruby command>
+$ export EPSAGON_TOKEN=<epsagon-token>
+$ export EPSAGON_APP_NAME=<app-name-stage>
+$ <ruby command>
 ```
 
 When using inside a `Dockerfile`, you can use `ENV` instead of `export`.
