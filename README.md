@@ -111,7 +111,7 @@ If you have any issue around using the library or the product, please don't hesi
 If you encounter a bug with the Epsagon library for ruby, we want to hear about it.
 
 When opening a new issue, please provide as much information about the environment:
-* Library version, Node.js runtime version, dependencies, etc.
+* Library version, Ruby runtime version, dependencies, etc.
 * Snippet of the usage.
 * A reproducible example can really help.
 
