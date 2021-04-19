@@ -15,17 +15,17 @@ jobs:
     env:
       api-dir: ./api 
 
-  #   steps:
-  #     - uses: actions/checkout@v1
-  #     - uses: actions/setup-ruby@v1
-  #       with:
-  #         ruby-version: 2.7.2
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/setup-ruby@v1
+        with:
+          ruby-version: 2.7.2
 
-  #     - name: Run bundle install
-  #       working-directory: ./
-  #       run: |
-  #         gem install bundler
-  #         bundle install --jobs 4 --retry 3
+      - name: Run bundle install
+        working-directory: ./
+        run: |
+          gem install bundler
+          bundle install --jobs 4 --retry 3
 
   #     - name: Build and test with rspec
   #       working-directory: ./
