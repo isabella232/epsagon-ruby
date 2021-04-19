@@ -25,7 +25,7 @@ gem install epsagon
 ## Usage
 **Important: Epsagon is activated and instruments the supported libraries once the module is imported.**
 
-### Auto Tracing:
+### Auto Tracing
 
 To enable automatic tracing on the supported libraries, add this snippet to your code:
 ```ruby
@@ -43,9 +43,23 @@ $ <ruby command>
 
 When using inside a `Dockerfile`, you can use `ENV` instead of `export`.
 
-### Custom traces:
+### Integrations
 
-Since Epsagon for Ruby is based on [Opentelemetry](https://github.com/open-telemetry/opentelemetry-ruby), opentelemetry features can be used to trace custom tasks:
+Epsagon provides out-of-the-box instrumentation (tracing) for some popular frameworks and libraries.
+
+|Library             |Supported Version          |
+|--------------------|---------------------------|
+|net/http            |Fully supported            |
+|faraday             |Fully supported            |
+|sinatra             |Fully supported            |
+|rails               |>=4.0.0                    |
+|aws-sdk             |>=2.0.0                    |
+
+
+### Custom traces
+
+Epsagon for Ruby is based on [OpenTelemetry](https://github.com/open-telemetry/opentelemetry-ruby).
+You can use the [`trace`](https://open-telemetry.github.io/opentelemetry-ruby/opentelemetry-api/v0.16.0/OpenTelemetry/Trace.html) API to create custom spans:
 
 ```ruby
 require 'epsagon'
@@ -65,25 +79,9 @@ tracer.in_span('my-task') do |span|
   end
   finish_my_task()
 end
-
-
 ```
 
-
-## Integrations
-
-Epsagon provides out-of-the-box instrumentation (tracing) for some popular frameworks and libraries.
-
-|Library             |Supported Version          |
-|--------------------|---------------------------|
-|net/http            |Fully supported            |
-|faraday             |Fully supported            |
-|sinatra             |Fully supported            |
-|rails               |>=4.0.0                    |
-|aws-sdk             |>=2.0.0                    |
-
-
-## Configuration:
+## Configuration
 
 The same settings from the environment variables and additional parameters can be set on initialization, e.g.:
 
@@ -91,12 +89,21 @@ The same settings from the environment variables and additional parameters can b
 require 'epsagon'
 
 epsagon.init({
-	metadata_only: false,
-	debug: true,
-	token: '<epsagon-token>',
-	app_name: 'example-app-name',
+    metadata_only: true,
+    debug: true,
+    token: '<epsagon-token>',
+    app_name: 'example-app-name',
 })
 ```
+
+The supported parameters are: 
+
+|Parameter               |Environment Variable           |Type   |Default      |Description                                                                        |
+|----------------------  |------------------------------ |-------|-------------|-----------------------------------------------------------------------------------|
+|token                   |EPSAGON_TOKEN                  |String |-            |Epsagon account token                                                              |
+|app_name                |EPSAGON_APP_NAME               |String |-            |Application name that will be set for traces                                       |
+|metadata_only           |-                              |Boolean|`False`      |Whether to send only the metadata (`True`) or also the payloads (`False`)          
+|debug                   |-                              |Boolean|`False`      |Enable debug prints for troubleshooting                                            
 
 
 ## Getting Help
