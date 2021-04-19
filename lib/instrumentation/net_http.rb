@@ -40,7 +40,7 @@ module EpsagonNetHTTPExtension
     tracer.in_span(
       @address,
       attributes: attributes,
-      kind: :Client
+      kind: :client
     ) do |span|
       OpenTelemetry.propagation.http.inject(req)
 
