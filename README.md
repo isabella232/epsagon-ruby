@@ -9,6 +9,8 @@
 
 # Epsagon Tracing for Ruby
 
+![Trace](trace.png)
+
 
 This package provides tracing to Ruby applications for the collection of distributed tracing and performance metrics in [Epsagon](https://app.epsagon.com/?utm_source=github).
 
@@ -17,13 +19,13 @@ This package provides tracing to Ruby applications for the collection of distrib
 
 To install Epsagon, run:
 ```sh
-gem install epsagon
+$ gem install epsagon
 ```
 
 ## Usage
 **Important: Epsagon is activated and instruments the supported libraries once the module is imported.**
 
-###Auto Tracing:
+### Auto Tracing
 
 To enable automatic tracing on the supported libraries, add this snippet to your code:
 ```ruby
@@ -32,40 +34,16 @@ require 'epsagon'
 epsagon.init()
 ```
 
-Set tho token and app name and run your ruby command:
+Set the token and app name, and run your Ruby command:
 ```sh
-export EPSAGON_TOKEN=<epsagon-token>
-export EPSAGON_APP_NAME=<app-name-stage>
-<ruby command>
+$ export EPSAGON_TOKEN=<epsagon-token>
+$ export EPSAGON_APP_NAME=<app-name>
+$ <ruby command>
 ```
 
 When using inside a `Dockerfile`, you can use `ENV` instead of `export`.
 
-###Custom traces:
-
-Since Epsagon for ruby is based on [Opentelemetry](https://github.com/open-telemetry/opentelemetry-ruby), opentelemetry features can be used to trace custom tasks:
-
-```ruby
-require 'epsagon'
-
-epsagon.init()
-
-tracer = OpenTelemetry.tracer_provider.tracer('send-test-spans', '0.1.0')
-
-tracer.in_span('my-task') do |span|
-  span.set_attribute('task_attribute', true)
-  span.set_attribute('another_task_attribute', 42)
-  span.set_attribute('yet_another_task_attribute', 'Attirbute value.')
-  tracer.in_span('inner-task') do |child_span|
-    child_span.set_attribute('inner_span_attr', 'inner_span_attr value')
-  end
-end
-
-
-```
-
-
-## Integrations
+### Integrations
 
 Epsagon provides out-of-the-box instrumentation (tracing) for some popular frameworks and libraries.
 
@@ -78,7 +56,32 @@ Epsagon provides out-of-the-box instrumentation (tracing) for some popular frame
 |aws-sdk             |>=2.0.0                    |
 
 
-##Configuration:
+### Custom traces
+
+Epsagon for Ruby is based on [OpenTelemetry](https://github.com/open-telemetry/opentelemetry-ruby).
+You can use the [`trace`](https://open-telemetry.github.io/opentelemetry-ruby/opentelemetry-api/v0.16.0/OpenTelemetry/Trace.html) API to create custom spans:
+
+```ruby
+require 'epsagon'
+
+epsagon.init()
+
+tracer = OpenTelemetry.tracer_provider.tracer('send-test-spans', '0.1.0')
+
+tracer.in_span('my-task') do |span|
+  span.set_attribute('task_attribute', true)
+  span.set_attribute('another_task_attribute', 42)
+  span.set_attribute('yet_another_task_attribute', 'Attirbute value.')
+  start_my_task()
+  tracer.in_span('inner-task') do |child_span|
+    do_traced_subtask()
+    child_span.set_attribute('inner_span_attr', 'inner_span_attr value')
+  end
+  finish_my_task()
+end
+```
+
+## Configuration
 
 The same settings from the environment variables and additional parameters can be set on initialization, e.g.:
 
@@ -86,12 +89,21 @@ The same settings from the environment variables and additional parameters can b
 require 'epsagon'
 
 epsagon.init({
-	  metadata_only: false,
-      debug: true,
-      token: '<epsagon-token>',
-      app_name: 'example-app-name',
+  metadata_only: true,
+  debug: true,
+  token: '<epsagon-token>',
+  app_name: 'example-app-name',
 })
 ```
+
+The supported parameters are: 
+
+|Parameter               |Environment Variable           |Type   |Default      |Description                                                                        |
+|----------------------  |------------------------------ |-------|-------------|-----------------------------------------------------------------------------------|
+|token                   |EPSAGON_TOKEN                  |String |-            |Epsagon account token                                                              |
+|app_name                |EPSAGON_APP_NAME               |String |-            |Application name that will be set for traces                                       |
+|metadata_only           |EPSAGON_METADATA               |Boolean|`False`      |Whether to send only the metadata (`True`) or also the payloads (`False`)          
+|debug                   |EPSAGON_DEBUG                  |Boolean|`False`      |Enable debug prints for troubleshooting                                            
 
 
 ## Getting Help
@@ -105,10 +117,10 @@ If you have any issue around using the library or the product, please don't hesi
 
 ## Opening Issues
 
-If you encounter a bug with the Epsagon library for ruby, we want to hear about it.
+If you encounter a bug with the Epsagon library for Ruby, we want to hear about it.
 
 When opening a new issue, please provide as much information about the environment:
-* Library version, Node.js runtime version, dependencies, etc.
+* Library version, Ruby runtime version, dependencies, etc.
 * Snippet of the usage.
 * A reproducible example can really help.
 
