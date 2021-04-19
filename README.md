@@ -37,7 +37,7 @@ epsagon.init()
 Set the token and app name, and run your Ruby command:
 ```sh
 $ export EPSAGON_TOKEN=<epsagon-token>
-$ export EPSAGON_APP_NAME=<app-name-stage>
+$ export EPSAGON_APP_NAME=<app-name>
 $ <ruby command>
 ```
 
