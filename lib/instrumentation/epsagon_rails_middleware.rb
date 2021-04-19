@@ -85,7 +85,11 @@ class EpsagonRackMiddleware
                      attributes: request_span_attributes(env: env),
                      kind: :server) do |http_span|
         RackExtension.with_span(http_span) do
-          tracer.in_span('rails') do |framework_span|
+          tracer.in_span(
+              env['HTTP_HOST'],
+              kind: :server,
+              attributes: {type: 'rails'}
+            ) do |framework_span|
             @app.call(env).tap do |status, headers, response|
               set_attributes_after_request(http_span, framework_span, status, headers, response)
             end
@@ -135,7 +139,7 @@ class EpsagonRackMiddleware
     attributes = {
       'operation' => env['REQUEST_METHOD'],
       'type' => 'http',
-      'http.scheme' => env['PATH_INFO'],
+      'http.scheme' => env['rack.url_scheme'],
       'http.request.path' => path,
       'http.request.headers' => request_headers
     }
