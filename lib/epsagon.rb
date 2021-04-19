@@ -17,13 +17,15 @@ Bundler.require
 
 # Epsagon tracing main entry point
 module Epsagon
+  DEFAULT_BACKEND = 'opentelemetry.tc.epsagon.com:443/traces'
+
   @@epsagon_config = {
-      metadata_only: ENV['EPSAGON_METADATA']&.to_s&.downcase != 'false',
-      debug: ENV['EPSAGON_DEBUG']&.to_s&.downcase == 'true',
-      token: ENV['EPSAGON_TOKEN'],
-      app_name: ENV['EPSAGON_APP_NAME'],
-      backend: ENV['EPSAGON_BACKEND'] || 'localhost:55681/v1/trace'
-    }
+    metadata_only: ENV['EPSAGON_METADATA']&.to_s&.downcase != 'false',
+    debug: ENV['EPSAGON_DEBUG']&.to_s&.downcase == 'true',
+    token: ENV['EPSAGON_TOKEN'],
+    app_name: ENV['EPSAGON_APP_NAME'],
+    backend: ENV['EPSAGON_BACKEND'] || DEFAULT_BACKEND
+  }
 
   module_function
 
@@ -47,10 +49,10 @@ module Epsagon
     if @@epsagon_config[:debug]
       configurator.add_span_processor OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(
         OpenTelemetry::Exporter::OTLP::Exporter.new(headers: {
-                            'x-epsagon-token' => @@epsagon_config[:token]
-                          },
-                          endpoint: @@epsagon_config[:backend],
-                          insecure: @@epsagon_config[:insecure] || false)
+                                                      'x-epsagon-token' => @@epsagon_config[:token]
+                                                    },
+                                                    endpoint: @@epsagon_config[:backend],
+                                                    insecure: @@epsagon_config[:insecure] || false)
       )
 
       configurator.add_span_processor OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(
@@ -66,7 +68,6 @@ module Epsagon
       )
     end
   end
-
 end
 
 # monkey patch to include epsagon confs

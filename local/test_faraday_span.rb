@@ -10,7 +10,7 @@ Epsagon.init(metadata_only: false, debug: true, backend: BACKEND, app_name: 'sen
 
 # add custom resource tag:
 OpenTelemetry::SDK.configure do |c|
-	puts 'resource tag'
+  puts 'resource tag'
   c.resource = OpenTelemetry::SDK::Resources::Resource.telemetry_sdk.merge(
     OpenTelemetry::SDK::Resources::Resource.create({ 'custom_resource_tag' => 'custom_resource_tag_val' })
   )

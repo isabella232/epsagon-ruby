@@ -5,7 +5,7 @@ require './lib/epsagon'
 require 'json'
 require 'net/http'
 
-Epsagon.init(metadata_only: true, debug: true)
+Epsagon.init(metadata_only: true, debug: true, app_name: :test_sinatra_span)
 
 OpenTelemetry::SDK.configure do |c|
   c.add_span_processor OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(

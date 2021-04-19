@@ -1,12 +1,13 @@
-  
+# frozen_string_literal: true
+
 require 'opentelemetry'
 require 'rails'
-require "action_controller/railtie"
+require 'action_controller/railtie'
 
 require_relative '../util'
 
 module RackExtension
-  extend self
+  module_function
 
   CURRENT_SPAN_KEY = OpenTelemetry::Context.create_key('current-span')
 
@@ -41,7 +42,7 @@ module RackExtension
     OpenTelemetry::Context.with_value(CURRENT_SPAN_KEY, span) { |c, s| yield s, c }
   end
 end
-  
+
 module MetalPatch
   def dispatch(name, request, response)
     rack_span = RackExtension.current_span
@@ -50,15 +51,13 @@ module MetalPatch
   end
 end
 
-
-
 class EpsagonRailsInstrumentation < OpenTelemetry::Instrumentation::Base
-    install do |_config|
-      require_relative 'epsagon_rails_middleware'
-      ::ActionController::Metal.prepend(MetalPatch)
-    end
+  install do |_config|
+    require_relative 'epsagon_rails_middleware'
+    ::ActionController::Metal.prepend(MetalPatch)
+  end
 
-    present do
-      defined?(::Rails)
-    end
+  present do
+    defined?(::Rails)
+  end
 end

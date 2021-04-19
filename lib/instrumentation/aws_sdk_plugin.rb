@@ -1,10 +1,13 @@
+# frozen_string_literal: true
+
 require 'aws-sdk-core'
 require 'opentelemetry/common'
 require 'opentelemetry/sdk'
 
-def untraced
-  OpenTelemetry::Trace.with_span(OpenTelemetry::Trace::Span.new) { yield }
+def untraced(&block)
+  OpenTelemetry::Trace.with_span(OpenTelemetry::Trace::Span.new, &block)
 end
+
 # AWS SDK plugin for epsagon instrumentation
 class EpsagonAwsPlugin < Seahorse::Client::Plugin
   def add_handlers(handlers, _)

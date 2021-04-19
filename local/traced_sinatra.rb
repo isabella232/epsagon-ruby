@@ -16,9 +16,8 @@ OpenTelemetry::SDK.configure do |c|
 end
 
 get '/make-error' do
-	raise
+  raise
 end
-
 
 post '/*' do
   JSON.generate({ body: request.body.read, path: request.path })

@@ -12,4 +12,3 @@ sleep 6
 
 Process.kill('SIGHUP', pids[:traced_app])
 Process.detach(pids[:traced_app])
-

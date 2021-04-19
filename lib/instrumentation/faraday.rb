@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # Patch faraday to include middleware
 module EpsagonFaradayPatch
   def adapter(*args)

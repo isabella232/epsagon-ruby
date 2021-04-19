@@ -6,7 +6,8 @@
 
 require './lib/epsagon'
 
-Epsagon.init(metadata_only: false, insecure: true, debug: true, backend: 'localhost:4569/', app_name: 'epsaon-test-rails')
+Epsagon.init(metadata_only: false, insecure: true, debug: true, backend: 'localhost:4569/',
+             app_name: 'epsaon-test-rails')
 
 require 'action_controller/railtie'
 require 'rails'
@@ -28,25 +29,20 @@ class TestsController < ActionController::Base
   include Rails.application.routes.url_helpers
 
   def index
-    render :inline => "ok"
+    render inline: 'ok'
   end
 
   def make_error
-  	raise
+    raise
   end
 end
 
 Rails.application.initialize!
 
-
-
 Rails.application.routes.draw do
-	post '/valid/:path', to: 'tests#index' 
-	get '/make-error', to: 'tests#make_error'
+  post '/valid/:path', to: 'tests#index'
+  get '/make-error', to: 'tests#make_error'
 end
-
-
-
 
 run Rails.application
 

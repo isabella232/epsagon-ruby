@@ -1,41 +1,42 @@
+# frozen_string_literal: true
+
 require 'opentelemetry/trace/status'
 
-
 module QueueTime
-	REQUEST_START = 'HTTP_X_REQUEST_START'
-	QUEUE_START = 'HTTP_X_QUEUE_START'
-	MINIMUM_ACCEPTABLE_TIME_VALUE = 1_000_000_000
+  REQUEST_START = 'HTTP_X_REQUEST_START'
+  QUEUE_START = 'HTTP_X_QUEUE_START'
+  MINIMUM_ACCEPTABLE_TIME_VALUE = 1_000_000_000
 
-	module_function
+  module_function
 
-	def get_request_start(env, now = nil) # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
-	  header = env[REQUEST_START] || env[QUEUE_START]
-	  return unless header
+  def get_request_start(env, now = nil) # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+    header = env[REQUEST_START] || env[QUEUE_START]
+    return unless header
 
-	  # nginx header is seconds in the format "t=1512379167.574"
-	  # apache header is microseconds in the format "t=1570633834463123"
-	  # heroku header is milliseconds in the format "1570634024294"
-	  time_string = header.to_s.delete('^0-9')
-	  return if time_string.nil?
+    # nginx header is seconds in the format "t=1512379167.574"
+    # apache header is microseconds in the format "t=1570633834463123"
+    # heroku header is milliseconds in the format "1570634024294"
+    time_string = header.to_s.delete('^0-9')
+    return if time_string.nil?
 
-	  # Return nil if the time is clearly invalid
-	  time_value = "#{time_string[0, 10]}.#{time_string[10, 6]}".to_f
-	  return if time_value.zero? || time_value < MINIMUM_ACCEPTABLE_TIME_VALUE
+    # Return nil if the time is clearly invalid
+    time_value = "#{time_string[0, 10]}.#{time_string[10, 6]}".to_f
+    return if time_value.zero? || time_value < MINIMUM_ACCEPTABLE_TIME_VALUE
 
-	  # return the request_start only if it's lesser than
-	  # current time, to avoid significant clock skew
-	  request_start = Time.at(time_value)
-	  now ||= Time.now.utc
-	  request_start.utc > now ? nil : request_start
-	rescue StandardError => e
-	  # in case of an Exception we don't create a
-	  # `request.queuing` span
-	  OpenTelemetry.logger.debug("[rack] unable to parse request queue headers: #{e}")
-	  nil
-	end
+    # return the request_start only if it's lesser than
+    # current time, to avoid significant clock skew
+    request_start = Time.at(time_value)
+    now ||= Time.now.utc
+    request_start.utc > now ? nil : request_start
+  rescue StandardError => e
+    # in case of an Exception we don't create a
+    # `request.queuing` span
+    OpenTelemetry.logger.debug("[rack] unable to parse request queue headers: #{e}")
+    nil
+  end
 end
 
-class EpsagonRackMiddleware # rubocop:disable Metrics/ClassLength
+class EpsagonRackMiddleware
   class << self
     def allowed_rack_request_headers
       @allowed_rack_request_headers ||= Array(config[:allowed_request_headers]).each_with_object({}) do |header, memo|
@@ -72,7 +73,7 @@ class EpsagonRackMiddleware # rubocop:disable Metrics/ClassLength
     @app = app
   end
 
-  def call(env) # rubocop:disable Metrics/AbcSize
+  def call(env)
     original_env = env.dup
     extracted_context = OpenTelemetry.propagation.http.extract(env)
     frontend_context = create_frontend_span(env, extracted_context)
@@ -181,7 +182,7 @@ class EpsagonRackMiddleware # rubocop:disable Metrics/ClassLength
     end
   end
 
-  def set_attributes_after_request(http_span, framework_span, status, headers, response)
+  def set_attributes_after_request(http_span, _framework_span, status, headers, response)
     unless config[:epsagon][:metadata_only]
       http_span.set_attribute('http.response.headers', JSON.generate(headers))
       http_span.set_attribute('http.response.body', response.join)
@@ -268,7 +269,6 @@ end
 #     end
 #   end
 # end
-
 
 class EpsagonRailtie < ::Rails::Railtie
   config.before_initialize do |app|

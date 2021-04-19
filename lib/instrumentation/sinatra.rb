@@ -51,7 +51,11 @@ class EpsagonTracerMiddleware
       kind: :server,
       with_parent: parent_context(env)
     ) do |http_span|
-      tracer.in_span('sinatra') do |framework_span|
+      tracer.in_span(
+        env['HTTP_HOST'],
+        kind: :server,
+        attributes: { 'type' => 'sinatra' }
+      ) do |framework_span|
         app.call(env).tap { |resp| trace_response(http_span, framework_span, env, resp) }
       end
     end
