@@ -26,7 +26,7 @@ class EpsagonTracerMiddleware
     attributes = {
       'operation' => env['REQUEST_METHOD'],
       'type' => 'http',
-      'http.scheme' => env['PATH_INFO'],
+      'http.scheme' => env['rack.url_scheme'],
       'http.request.path' => path,
       'http.request.headers' => request_headers
     }
@@ -54,7 +54,7 @@ class EpsagonTracerMiddleware
       tracer.in_span(
         env['HTTP_HOST'],
         kind: :server,
-        attributes: { 'type' => 'sinatra' }
+        attributes: { type: 'sinatra' }
       ) do |framework_span|
         app.call(env).tap { |resp| trace_response(http_span, framework_span, env, resp) }
       end
@@ -82,7 +82,7 @@ class EpsagonTracerMiddleware
     end
 
     http_span.set_attribute('http.status_code', status)
-    framework_span.set_attribute('http.route', env['sinatra.route'].split.last) if env['sinatra.route']
+    http_span.set_attribute('http.route', env['sinatra.route'].split.last) if env['sinatra.route']
     http_span.status = OpenTelemetry::Trace::Status.http_to_status(status)
   end
 end
