@@ -19,7 +19,7 @@ This package provides tracing to Ruby applications for the collection of distrib
 
 To install Epsagon, run:
 ```sh
-gem install epsagon
+$ gem install epsagon
 ```
 
 ## Usage
@@ -89,10 +89,10 @@ The same settings from the environment variables and additional parameters can b
 require 'epsagon'
 
 epsagon.init({
-    metadata_only: true,
-    debug: true,
-    token: '<epsagon-token>',
-    app_name: 'example-app-name',
+  metadata_only: true,
+  debug: true,
+  token: '<epsagon-token>',
+  app_name: 'example-app-name',
 })
 ```
 
@@ -102,8 +102,8 @@ The supported parameters are:
 |----------------------  |------------------------------ |-------|-------------|-----------------------------------------------------------------------------------|
 |token                   |EPSAGON_TOKEN                  |String |-            |Epsagon account token                                                              |
 |app_name                |EPSAGON_APP_NAME               |String |-            |Application name that will be set for traces                                       |
-|metadata_only           |-                              |Boolean|`False`      |Whether to send only the metadata (`True`) or also the payloads (`False`)          
-|debug                   |-                              |Boolean|`False`      |Enable debug prints for troubleshooting                                            
+|metadata_only           |EPSAGON_METADATA               |Boolean|`False`      |Whether to send only the metadata (`True`) or also the payloads (`False`)          
+|debug                   |EPSAGON_DEBUG                  |Boolean|`False`      |Enable debug prints for troubleshooting                                            
 
 
 ## Getting Help
