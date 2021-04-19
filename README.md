@@ -9,6 +9,8 @@
 
 # Epsagon Tracing for Ruby
 
+![Trace](trace.png)
+
 
 This package provides tracing to Ruby applications for the collection of distributed tracing and performance metrics in [Epsagon](https://app.epsagon.com/?utm_source=github).
 
@@ -32,7 +34,7 @@ require 'epsagon'
 epsagon.init()
 ```
 
-Set the token and app name, and run your ruby command:
+Set the token and app name, and run your Ruby command:
 ```sh
 $ export EPSAGON_TOKEN=<epsagon-token>
 $ export EPSAGON_APP_NAME=<app-name-stage>
@@ -43,7 +45,7 @@ When using inside a `Dockerfile`, you can use `ENV` instead of `export`.
 
 ### Custom traces:
 
-Since Epsagon for ruby is based on [Opentelemetry](https://github.com/open-telemetry/opentelemetry-ruby), opentelemetry features can be used to trace custom tasks:
+Since Epsagon for Ruby is based on [Opentelemetry](https://github.com/open-telemetry/opentelemetry-ruby), opentelemetry features can be used to trace custom tasks:
 
 ```ruby
 require 'epsagon'
@@ -108,7 +110,7 @@ If you have any issue around using the library or the product, please don't hesi
 
 ## Opening Issues
 
-If you encounter a bug with the Epsagon library for ruby, we want to hear about it.
+If you encounter a bug with the Epsagon library for Ruby, we want to hear about it.
 
 When opening a new issue, please provide as much information about the environment:
 * Library version, Ruby runtime version, dependencies, etc.
