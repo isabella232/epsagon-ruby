@@ -19,3 +19,6 @@ instrumentation/**/*.gemfile.lock
 .ruby-gemset
 .ruby-version
 
+# Local scripts
+local/
+
