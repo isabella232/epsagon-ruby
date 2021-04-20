@@ -28,12 +28,12 @@ $ gem install epsagon
 ### Auto Tracing
 
 To enable automatic tracing on the supported libraries, add this snippet to your code:
-(for a [Rails](https://rubyonrails.org/) app, the snippet can be added in `config/boot.rb`)
 ```ruby
 require 'epsagon'
 
 Epsagon.init
 ```
+(for a [Rails](https://rubyonrails.org/) app, the snippet can be added in `config/boot.rb`)
 
 Set the token and app name, and run your Ruby command:
 ```sh
