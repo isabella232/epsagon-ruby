@@ -90,7 +90,7 @@ The same settings from the environment variables and additional parameters can b
 require 'epsagon'
 
 Epsagon.init({
-  metadata_only: true,
+  metadata_only: false,
   debug: true,
   token: '<epsagon-token>',
   app_name: 'example-app-name',
