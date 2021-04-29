@@ -3,6 +3,7 @@
 require 'opentelemetry'
 
 require_relative '../util'
+require_relative '../epsagon_constants'
 
 # Net::HTTP patch for epsagon instrumentaton
 module EpsagonNetHTTPExtension
@@ -74,7 +75,7 @@ end
 
 # Net::HTTP epsagon instrumentaton
 class EpsagonNetHTTPInstrumentation < OpenTelemetry::Instrumentation::Base
-  VERSION = '0.0.0'
+  VERSION = EpsagonConstants::VERSION
 
   install do |_|
     ::Net::HTTP.prepend(EpsagonNetHTTPExtension)

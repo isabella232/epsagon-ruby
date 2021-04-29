@@ -13,7 +13,7 @@ end
 
 # Faraday epsagon instrumentaton
 class EpsagonFaradayInstrumentation < OpenTelemetry::Instrumentation::Base
-  VERSION = '0.0.0'
+  VERSION = EpsagonConstants::VERSION
 
   install do |_config|
     require_relative 'epsagon_faraday_middleware'

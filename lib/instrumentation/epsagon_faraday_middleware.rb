@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require_relative '../util'
+require_relative '../epsagon_constants'
+
 require 'faraday'
 
 # Faraday middleware for epsagon instrumentaton

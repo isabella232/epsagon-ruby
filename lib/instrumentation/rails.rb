@@ -5,6 +5,8 @@ require 'rails'
 require 'action_controller/railtie'
 
 require_relative '../util'
+require_relative '../epsagon_constants'
+
 
 module RackExtension
   module_function

@@ -1,10 +1,11 @@
 # frozen_string_literal: true
 
 require_relative '../util'
+require_relative '../epsagon_constants'
 
 # AWS SDK epsagon instrumentation
 class EpsagonAwsSdkInstrumentation < OpenTelemetry::Instrumentation::Base
-  VERSION = '0.0.0'
+  VERSION = EpsagonConstants::VERSION
   SERVICES = %w[
     ACM
     APIGateway

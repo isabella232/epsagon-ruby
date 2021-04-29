@@ -31,6 +31,6 @@ class EpsagonAwsHandler < Seahorse::Client::Handler
   end
 
   def tracer
-    EpsagonAwsSdkInstrumentation.instance.tracer
+    EpsagonAwsSdkInstrumentation.instance.tracer()
   end
 end

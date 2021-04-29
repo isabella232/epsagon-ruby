@@ -3,6 +3,7 @@
 require 'opentelemetry'
 
 require_relative '../util'
+require_relative '../epsagon_constants'
 
 # Sinatra middleware for epsagon instrumentation
 class EpsagonTracerMiddleware
@@ -111,7 +112,7 @@ end
 
 # Sinatra epsagon instrumentation
 class EpsagonSinatraInstrumentation < OpenTelemetry::Instrumentation::Base
-  VERSION = '0.0.0'
+  VERSION = EpsagonConstants::VERSION
 
   install do |_|
     ::Sinatra::Base.register EpsagonTracerExtension
