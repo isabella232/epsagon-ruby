@@ -31,8 +31,9 @@ To enable automatic tracing on the supported libraries, add this snippet to your
 ```ruby
 require 'epsagon'
 
-epsagon.init()
+Epsagon.init
 ```
+(for a [Rails](https://rubyonrails.org/) app, the snippet can be added in `config/boot.rb`)
 
 Set the token and app name, and run your Ruby command:
 ```sh
@@ -64,7 +65,7 @@ You can use the [`trace`](https://open-telemetry.github.io/opentelemetry-ruby/op
 ```ruby
 require 'epsagon'
 
-epsagon.init()
+Epsagon.init
 
 tracer = OpenTelemetry.tracer_provider.tracer('send-test-spans', '0.1.0')
 
@@ -88,7 +89,7 @@ The same settings from the environment variables and additional parameters can b
 ```ruby
 require 'epsagon'
 
-epsagon.init({
+Epsagon.init({
   metadata_only: true,
   debug: true,
   token: '<epsagon-token>',
