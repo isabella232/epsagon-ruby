@@ -56,7 +56,7 @@ module Epsagon
     configurator.use 'EpsagonFaradayInstrumentation', { epsagon: @@epsagon_config }
     configurator.use 'EpsagonAwsSdkInstrumentation', { epsagon: @@epsagon_config }
     configurator.use 'EpsagonRailsInstrumentation', { epsagon: @@epsagon_config }
-    configurator.use 'OpenTelemetry::Instrumentation::Sidekiq'
+    configurator.use 'OpenTelemetry::Instrumentation::Sidekiq', { epsagon: @@epsagon_config }
 
     if @@epsagon_config[:debug]
       configurator.add_span_processor OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(
@@ -107,18 +107,24 @@ end
 
 module SidekiqClientMiddlewareExtension
   def call(_worker_class, job, _queue, _redis_pool)
+    config = OpenTelemetry::Instrumentation::Sidekiq::Instrumentation.instance.config[:epsagon] || {}
+    attributes = {
+      'operation' => job['at'] ? 'perform_at' : 'perform_async',
+      'messaging.system' => 'sidekiq',
+      'messaging.sidekiq.job_class' => job['wrapped']&.to_s || job['class'],
+      'messaging.message_id' => job['jid'],
+      'messaging.destination' => job['queue'],
+      'messaging.destination_kind' => 'queue',
+      'messaging.sidekiq.redis_url' => Sidekiq.options['url'] || 'redis://localhost:6379/0'
+    }
+    unless config[:metadata_only]
+      attributes.merge!({
+        'messaging.sidekiq.args' => JSON.dump(job['args'])
+      })
+    end
     tracer.in_span(
       job['queue'],
-      attributes: {
-        'operation' => job['at'] ? 'perform_at' : 'perform_async',
-        'messaging.system' => 'sidekiq',
-        'messaging.sidekiq.job_class' => job['wrapped']&.to_s || job['class'],
-        'messaging.message_id' => job['jid'],
-        'messaging.destination' => job['queue'],
-        'messaging.destination_kind' => 'queue',
-        'messaging.sidekiq.args' => JSON.dump(job['args']),
-        'net.peer.name' => Sidekiq.options['url'] || 'redis://localhost:6379/0'
-      },
+      attributes: attributes,
       kind: :producer
     ) do |span|
       OpenTelemetry.propagation.text.inject(job)
@@ -130,19 +136,25 @@ end
 
 module SidekiqServerMiddlewareExtension
   def call(_worker, msg, _queue)
+    config = OpenTelemetry::Instrumentation::Sidekiq::Instrumentation.instance.config[:epsagon] || {}
     parent_context = OpenTelemetry.propagation.text.extract(msg)
-    tracer.in_span(
-      msg['queue'],
-      attributes: {
+    attributes = {
         'operation' => 'perform',
         'messaging.system' => 'sidekiq',
         'messaging.sidekiq.job_class' => msg['wrapped']&.to_s || msg['class'],
         'messaging.message_id' => msg['jid'],
         'messaging.destination' => msg['queue'],
         'messaging.destination_kind' => 'queue',
-        'messaging.sidekiq.args' => JSON.dump(msg['args']),
-        'net.peer.name' => Sidekiq.options['url'] || 'redis://localhost:6379/0'
-      },
+        'messaging.sidekiq.redis_url' => Sidekiq.options['url'] || 'redis://localhost:6379/0'
+    }
+    unless config[:metadata_only]
+      attributes.merge!({
+        'messaging.sidekiq.args' => JSON.dump(msg['args'])
+      })
+    end
+    tracer.in_span(
+      msg['queue'],
+      attributes: attributes,
       with_parent: parent_context,
       kind: :consumer
     ) do |span|
@@ -177,6 +189,11 @@ module OpenTelemetry
         module Client
           class TracerMiddleware
             prepend SidekiqClientMiddlewareExtension
+          end
+        end
+        module Server
+          class TracerMiddleware
+            prepend SidekiqServerMiddlewareExtension
           end
         end
       end
