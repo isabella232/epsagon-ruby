@@ -17,5 +17,6 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency  'opentelemetry-api', '~> 0.11.0'
   s.add_runtime_dependency  'opentelemetry-exporter-otlp', '~> 0.11.0'
   s.add_runtime_dependency  'opentelemetry-instrumentation-sinatra', '~> 0.11.0'
+  s.add_runtime_dependency  'opentelemetry-instrumentation-sidekiq', '~> 0.11.0'
   s.add_runtime_dependency  'opentelemetry-sdk', '~> 0.11.1'
 end

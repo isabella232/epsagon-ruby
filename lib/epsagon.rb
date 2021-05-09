@@ -1,10 +1,11 @@
 # frozen_string_literal: true
-
+require 'json'
 require 'rubygems'
 require 'net/http'
 require 'bundler/setup'
 require 'opentelemetry/sdk'
 require 'opentelemetry/exporter/otlp'
+require 'opentelemetry/instrumentation/sidekiq'
 
 require_relative 'instrumentation/sinatra'
 require_relative 'instrumentation/net_http'
@@ -55,6 +56,7 @@ module Epsagon
     configurator.use 'EpsagonFaradayInstrumentation', { epsagon: @@epsagon_config }
     configurator.use 'EpsagonAwsSdkInstrumentation', { epsagon: @@epsagon_config }
     configurator.use 'EpsagonRailsInstrumentation', { epsagon: @@epsagon_config }
+    configurator.use 'OpenTelemetry::Instrumentation::Sidekiq'
 
     if @@epsagon_config[:debug]
       configurator.add_span_processor OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(
@@ -103,7 +105,56 @@ module SpanExtension
   end
 end
 
+module SidekiqClientMiddlewareExtension
+  def call(_worker_class, job, _queue, _redis_pool)
+    tracer.in_span(
+      job['queue'],
+      attributes: {
+        'operation' => job['at'] ? 'perform_at' : 'perform_async',
+        'messaging.system' => 'sidekiq',
+        'messaging.sidekiq.job_class' => job['wrapped']&.to_s || job['class'],
+        'messaging.message_id' => job['jid'],
+        'messaging.destination' => job['queue'],
+        'messaging.destination_kind' => 'queue',
+        'messaging.sidekiq.args' => JSON.dump(job['args']),
+        'net.peer.name' => Sidekiq.options['url'] || 'redis://localhost:6379/0'
+      },
+      kind: :producer
+    ) do |span|
+      OpenTelemetry.propagation.text.inject(job)
+      span.add_event('created_at', timestamp: job['created_at'])
+      yield
+    end
+  end
+end
+
+module SidekiqServerMiddlewareExtension
+  def call(_worker, msg, _queue)
+    parent_context = OpenTelemetry.propagation.text.extract(msg)
+    tracer.in_span(
+      msg['queue'],
+      attributes: {
+        'operation' => 'perform',
+        'messaging.system' => 'sidekiq',
+        'messaging.sidekiq.job_class' => msg['wrapped']&.to_s || msg['class'],
+        'messaging.message_id' => msg['jid'],
+        'messaging.destination' => msg['queue'],
+        'messaging.destination_kind' => 'queue',
+        'messaging.sidekiq.args' => JSON.dump(msg['args']),
+        'net.peer.name' => Sidekiq.options['url'] || 'redis://localhost:6379/0'
+      },
+      with_parent: parent_context,
+      kind: :consumer
+    ) do |span|
+      span.add_event('created_at', timestamp: msg['created_at'])
+      span.add_event('enqueued_at', timestamp: msg['enqueued_at'])
+      yield
+    end
+  end
+end
+
 # monkey patch to include epsagon confs
+
 module OpenTelemetry
   # monkey patch inner SDK module
   module SDK
@@ -117,6 +168,17 @@ module OpenTelemetry
     module Trace
       class Span
         prepend SpanExtension
+      end
+    end
+  end
+  module Instrumentation
+    module Sidekiq
+      module Middlewares
+        module Client
+          class TracerMiddleware
+            prepend SidekiqClientMiddlewareExtension
+          end
+        end
       end
     end
   end
