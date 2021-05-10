@@ -30,4 +30,8 @@ module Util
   		value
   	end
   end
+
+  def self.redis_default_url
+    @@redis_default_url ||= "#{Redis::Client::DEFAULTS[:scheme]}://#{Redis::Client::DEFAULTS[:host]}:#{Redis::Client::DEFAULTS[:port]}/#{Redis::Client::DEFAULTS[:db]}"
+  end
 end

@@ -106,6 +106,7 @@ module SpanExtension
 end
 
 module SidekiqClientMiddlewareExtension
+
   def call(_worker_class, job, _queue, _redis_pool)
     config = OpenTelemetry::Instrumentation::Sidekiq::Instrumentation.instance.config[:epsagon] || {}
     attributes = {
@@ -115,7 +116,7 @@ module SidekiqClientMiddlewareExtension
       'messaging.message_id' => job['jid'],
       'messaging.destination' => job['queue'],
       'messaging.destination_kind' => 'queue',
-      'messaging.sidekiq.redis_url' => Sidekiq.options['url'] || 'redis://localhost:6379/0'
+      'messaging.sidekiq.redis_url' => Sidekiq.options['url'] || Util.redis_default_url
     }
     unless config[:metadata_only]
       attributes.merge!({
@@ -145,7 +146,7 @@ module SidekiqServerMiddlewareExtension
         'messaging.message_id' => msg['jid'],
         'messaging.destination' => msg['queue'],
         'messaging.destination_kind' => 'queue',
-        'messaging.sidekiq.redis_url' => Sidekiq.options['url'] || 'redis://localhost:6379/0'
+        'messaging.sidekiq.redis_url' => Sidekiq.options['url'] || Util.redis_default_url
     }
     unless config[:metadata_only]
       attributes.merge!({
