@@ -130,7 +130,7 @@ module SidekiqClientMiddlewareExtension
     ) do |span|
       OpenTelemetry.propagation.text.inject(job)
       span.add_event('created_at', timestamp: job['created_at'])
-      yield
+      Util.untraced {yield}
     end
   end
 end
@@ -186,6 +186,21 @@ module OpenTelemetry
   end
   module Instrumentation
     module Sidekiq
+      class Instrumentation
+        def add_server_middleware
+          ::Sidekiq.configure_server do |config|
+            config.server_middleware do |chain|
+              chain.add Middlewares::Server::TracerMiddleware
+            end
+          end
+
+          if defined?(::Sidekiq::Testing) # rubocop:disable Style/GuardClause
+            ::Sidekiq::Testing.server_middleware do |chain|
+              chain.add Middlewares::Server::TracerMiddleware
+            end
+          end
+        end
+      end
       module Middlewares
         module Client
           class TracerMiddleware
