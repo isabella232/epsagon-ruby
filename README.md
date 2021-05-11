@@ -90,12 +90,12 @@ The same settings from the environment variables and additional parameters can b
 ```ruby
 require 'epsagon'
 
-Epsagon.init({
+Epsagon.init(
   metadata_only: false,
   debug: true,
   token: '<epsagon-token>',
   app_name: 'example-app-name',
-})
+)
 ```
 
 The supported parameters are: 
