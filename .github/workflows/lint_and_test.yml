@@ -13,7 +13,7 @@ jobs:
     name: CI
     runs-on: ubuntu-latest
     env:
-      api-dir: ./api 
+      api-dir: ./api
 
     steps:
       - uses: actions/checkout@v1
@@ -27,13 +27,10 @@ jobs:
           gem install bundler
           bundle install --jobs 4 --retry 3
 
-  #     - name: Build and test with rspec
-  #       working-directory: ./
-  #       env:
-  #         EPSAGON_BACKEND: localhost:4568/
-  #         EPSAGON_METADATA: False
-  #       run: rspec spec
-  #     - name: Install Rubocop
-  #       run: gem install rubocop
-  #     - name: Check code
-  #       run: rubocop
+      - name: Build and test with rspec
+        working-directory: ./
+        run: bundle exec rspec spec/config_spec.rb
+      # - name: Install Rubocop
+      #   run: gem install rubocop
+      # - name: Check code
+      #   run: rubocop
