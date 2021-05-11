@@ -28,8 +28,8 @@ module Epsagon
     @@epsagon_config = {
       metadata_only: ENV['EPSAGON_METADATA']&.to_s&.downcase != 'false',
       debug: ENV['EPSAGON_DEBUG']&.to_s&.downcase == 'true',
-      token: ENV['EPSAGON_TOKEN'],
-      app_name: ENV['EPSAGON_APP_NAME'],
+      token: ENV['EPSAGON_TOKEN'] || '',
+      app_name: ENV['EPSAGON_APP_NAME'] || '',
       max_attribute_size: ENV['EPSAGON_MAX_ATTRIBUTE_SIZE'] || 5000,
       backend: ENV['EPSAGON_BACKEND'] || DEFAULT_BACKEND
     }
