@@ -15,6 +15,29 @@ RSpec.describe do
     sleep 3
   end
 
+  describe 'parameters' do
+    let(:epsagon_token)     { 'abcd' }
+    let(:epsagon_app_name)  { 'example_app' }
+
+    describe 'retrieves' do
+      specify 'token from environment variable' do
+        ClimateControl.modify EPSAGON_TOKEN: epsagon_token, EPSAGON_APP_NAME: epsagon_app_name do
+          Epsagon.init
+          config = Epsagon.get_config
+          expect(config[:token]).to eq epsagon_token
+        end
+      end
+
+      specify 'app_name from environment variable' do
+        ClimateControl.modify EPSAGON_TOKEN: epsagon_token, EPSAGON_APP_NAME: epsagon_app_name do
+          Epsagon.init
+          config = Epsagon.get_config
+          expect(config[:app_name]).to eq epsagon_app_name
+        end
+      end
+    end
+  end
+
   describe 'trace' do
     it 'gets request data correctly' do
       `curl -X POST http://localhost:4567/foo/bar -d "amir=asdasd"`
