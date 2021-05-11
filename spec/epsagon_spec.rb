@@ -19,21 +19,23 @@ RSpec.describe do
     let(:epsagon_token)     { 'abcd' }
     let(:epsagon_app_name)  { 'example_app' }
 
+    before do
+      Epsagon.init
+    end
+
+    around do |example|
+      ClimateControl.modify EPSAGON_TOKEN: epsagon_token, EPSAGON_APP_NAME: epsagon_app_name do
+        example.run
+      end
+    end
+
     describe 'retrieves' do
       specify 'token from environment variable' do
-        ClimateControl.modify EPSAGON_TOKEN: epsagon_token, EPSAGON_APP_NAME: epsagon_app_name do
-          Epsagon.init
-          config = Epsagon.get_config
-          expect(config[:token]).to eq epsagon_token
-        end
+        expect(Epsagon.get_config[:token]).to eq epsagon_token
       end
 
       specify 'app_name from environment variable' do
-        ClimateControl.modify EPSAGON_TOKEN: epsagon_token, EPSAGON_APP_NAME: epsagon_app_name do
-          Epsagon.init
-          config = Epsagon.get_config
-          expect(config[:app_name]).to eq epsagon_app_name
-        end
+        expect(Epsagon.get_config[:app_name]).to eq epsagon_app_name
       end
     end
   end
