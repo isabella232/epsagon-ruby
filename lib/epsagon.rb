@@ -12,6 +12,7 @@ require_relative 'instrumentation/net_http'
 require_relative 'instrumentation/faraday'
 require_relative 'instrumentation/aws_sdk'
 require_relative 'instrumentation/rails'
+require_relative 'instrumentation/postgres'
 require_relative 'util'
 require_relative 'epsagon_constants'
 require_relative 'exporter_extension'
@@ -61,6 +62,7 @@ module Epsagon
     configurator.use 'EpsagonAwsSdkInstrumentation', { epsagon: @@epsagon_config }
     configurator.use 'EpsagonRailsInstrumentation', { epsagon: @@epsagon_config }
     configurator.use 'OpenTelemetry::Instrumentation::Sidekiq', { epsagon: @@epsagon_config }
+    configurator.use 'EpsagonPostgresInstrumentation', { epsagon: @@epsagon_config }
 
     if @@epsagon_config[:debug]
       configurator.add_span_processor OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(
