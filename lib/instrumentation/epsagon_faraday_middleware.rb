@@ -37,11 +37,11 @@ class EpsagonFaradayMiddleware < ::Faraday::Middleware
     unless config[:epsagon][:metadata_only]
       attributes.merge!(Util.epsagon_query_attributes(env.url.query))
       attributes.merge!({
-                          'http.request.path_params' => path_params,
-                          'http.request.headers' => env.request_headers.to_json,
-                          'http.request.body' => env.body,
-                          'http.request.headers.User-Agent' => env.request_headers['User-Agent']
-                        })
+        'http.request.path_params' => path_params,
+        'http.request.headers' => env.request_headers.to_json,
+        'http.request.body' => env.body,
+        'http.request.headers.User-Agent' => env.request_headers['User-Agent']
+      })
     end
 
     tracer.in_span(

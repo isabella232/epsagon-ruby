@@ -18,13 +18,30 @@ end
 # Generates Spans for all uses of AWS SDK
 class EpsagonAwsHandler < Seahorse::Client::Handler
   def call(context)
-    tracer.in_span('', kind: :client) do |span|
+    attributes = {
+      'aws.service' => context.client.class.to_s.split('::')[1].downcase,
+      'aws.operation' => context.operation.name
+    }  
+    attributes['aws.region'] = context.client.config.region unless attributes['aws.service'] == 's3'
+    if attributes['aws.service'] == 's3'
+      attributes['aws.s3.bucket'] = context.params[:bucket]
+      attributes['aws.s3.key'] = context.params[:key]
+      attributes['aws.s3.copy_source'] = context.params[:copy_source]
+    end
+    tracer.in_span('', kind: :client, attributes: attributes) do |span|
       untraced do
         @handler.call(context).tap do
-          span.set_attribute('aws.service', context.client.class.to_s.split('::')[1].downcase)
-          span.set_attribute('aws.operation', context.operation.name)
-          span.set_attribute('aws.region', context.client.config.region)
-          span.set_attribute('http.status_code', context.http_response.status_code)
+          if attributes['aws.service'] == 's3'
+            modified = context.http_response.headers[:'last-modified']
+            reformated_modified = modified ? 
+                                  Time.strptime(modified, '%a, %d %b %Y %H:%M:%S %Z')
+                                  .strftime('%Y-%m-%dT%H:%M:%SZ') :
+                                  nil
+            span.set_attribute('http.status_code', context.http_response.status_code)
+            span.set_attribute('aws.s3.content_length', context.http_response.headers[:'content-length']&.to_i)
+            span.set_attribute('aws.s3.etag', context.http_response.headers[:etag])
+            span.set_attribute('aws.s3.last_modified', reformated_modified)
+          end
         end
       end
     end

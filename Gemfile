@@ -28,3 +28,11 @@ gem 'faraday', '~> 1.4'
 gem 'sinatra', '~> 2.1'
 
 gem 'aws-sdk-s3', '~> 1.93'
+
+gem "opentelemetry-instrumentation-sidekiq", "~> 0.11.0"
+
+gem "byebug", "~> 11.1"
+
+gem "aws-sdk-sqs", "~> 1.38"
+
+gem "aws-sdk-sns", "~> 1.40"
