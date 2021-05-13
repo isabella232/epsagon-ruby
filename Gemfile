@@ -40,3 +40,7 @@ gem "aws-sdk-sns", "~> 1.40"
 gem 'rspec-rake'
 
 gem 'climate_control'
+
+gem 'mysql2'
+
+gem 'byebug'

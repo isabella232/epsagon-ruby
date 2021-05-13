@@ -46,7 +46,17 @@ RSpec.describe do
           Epsagon.init
         end
 
+        around do |example|
+          ClimateControl.modify EPSAGON_TOKEN: nil,
+                                EPSAGON_APP_NAME: nil,
+                                EPSAGON_DEBUG: nil,
+                                EPSAGON_METADATA: nil do
+            example.run
+          end
+        end
+
         it 'assigns empty string to EPSAGON_TOKEN' do
+          p Epsagon.get_config
           expect(Epsagon.get_config[:token]).to eq ''
         end
 
