@@ -13,6 +13,8 @@ gem 'opentelemetry-instrumentation-sinatra', '~> 0.11.0'
 
 gem 'pry', '~> 0.13.1'
 
+gem 'byebug'
+
 gem 'opentelemetry-exporter-otlp', '~> 0.11.0'
 
 gem 'rspec', '~> 3.10'
@@ -40,3 +42,5 @@ gem "aws-sdk-sns", "~> 1.40"
 gem 'rspec-rake'
 
 gem 'climate_control'
+
+gem "pg", "~> 1.2"

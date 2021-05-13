@@ -120,6 +120,24 @@ module PostgresExtension
     end
   end
 
+  PREPARE_ISH_METHODS.each do |method|
+    define_method method do |*args|
+      span_name, attrs = span_attrs(:prepare, *args)
+      tracer.in_span(span_name, attributes: attrs, kind: :client) do
+        super(*args)
+      end
+    end
+  end
+
+  EXEC_PREPARED_ISH_METHODS.each do |method|
+    define_method method do |*args|
+      span_name, attrs = span_attrs(:execute, *args)
+      tracer.in_span(span_name, attributes: attrs, kind: :client) do
+        super(*args)
+      end
+    end
+  end
+
   def tracer
     EpsagonPostgresInstrumentation.instance.tracer
   end
@@ -137,16 +155,17 @@ module PostgresExtension
 
       if kind == :prepare
         sql = obfuscate_sql(args[1])
-        lru_cache[statement_name] = sql
+        # lru_cache[statement_name] = sql
         operation = 'PREPARE'
       else
-        sql = lru_cache[statement_name]
+        # sql = lru_cache[statement_name]
         operation = 'EXECUTE'
       end
     end
 
     attrs = { 'db.operation' => validated_operation(operation), 'db.postgresql.prepared_statement_name' => statement_name }
-    # attrs['db.statement'] = sql if config[:enable_statement_attribute]
+    attrs['db.statement'] = sql # if config[:enable_statement_attribute]
+    attrs['type'] = 'sql'
     attrs.reject! { |_, v| v.nil? }
 
     [span_name(operation), client_attributes.merge(attrs)]
@@ -168,7 +187,7 @@ module PostgresExtension
   end
 
   def span_name(operation)
-    [validated_operation(operation), database_name].compact.join(' ')
+    p [validated_operation(operation), database_name].compact.join(' ')
   end
 
   def validated_operation(operation)
@@ -195,7 +214,7 @@ module PostgresExtension
       'db.name' => database_name,
       'net.peer.name' => conninfo_hash[:host]&.to_s
     }
-    # attributes['peer.service'] = config[:peer_service] if config[:peer_service]
+    # attributes['peer.service'] = config[:peer_service] # if config[:peer_service]
 
     attributes.merge(transport_attrs).reject { |_, v| v.nil? }
   end
@@ -215,7 +234,6 @@ end
 
 class EpsagonPostgresInstrumentation < OpenTelemetry::Instrumentation::Base
   install do |_config|
-    puts "CALLING INSTALLATION"
     ::PG::Connection.prepend(PostgresExtension)
   end
 
