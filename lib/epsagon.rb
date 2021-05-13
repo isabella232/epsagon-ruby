@@ -97,11 +97,10 @@ module SpanExtension
   def initialize(*args)
     super(*args)
     if @attributes
-      @attributes = Hash[@attributes.map { |k,v|
+      @attributes = Hash[@attributes.select {|k,v| not BLANKS.include? v}.map { |k,v|
         [k, Util.trim_attr(v, Epsagon.get_config[:max_attribute_size])]
       }]
     end
-    
   end
 end
 

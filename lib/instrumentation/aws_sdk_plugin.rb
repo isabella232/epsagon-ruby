@@ -18,6 +18,7 @@ end
 # Generates Spans for all uses of AWS SDK
 class EpsagonAwsHandler < Seahorse::Client::Handler
   def call(context)
+    span_name = ''
     attributes = {
       'aws.service' => context.client.class.to_s.split('::')[1].downcase,
       'aws.operation' => context.operation.name
@@ -25,10 +26,11 @@ class EpsagonAwsHandler < Seahorse::Client::Handler
     attributes['aws.region'] = context.client.config.region unless attributes['aws.service'] == 's3'
     if attributes['aws.service'] == 's3'
       attributes['aws.s3.bucket'] = context.params[:bucket]
+      span_name = attributes['aws.s3.bucket'] if attributes['aws.s3.bucket']
       attributes['aws.s3.key'] = context.params[:key]
       attributes['aws.s3.copy_source'] = context.params[:copy_source]
     end
-    tracer.in_span('', kind: :client, attributes: attributes) do |span|
+    tracer.in_span(span_name, kind: :client, attributes: attributes) do |span|
       untraced do
         @handler.call(context).tap do
           if attributes['aws.service'] == 's3'
