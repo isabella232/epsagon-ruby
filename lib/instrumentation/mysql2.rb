@@ -54,8 +54,6 @@ module MySql2Extension
   private
 
   def obfuscate_sql(sql)
-    # return sql unless config[:enable_sql_obfuscation]
-
     if sql.size > 2000
       'SQL query too large to remove sensitive data ...'
     else
@@ -79,19 +77,8 @@ module MySql2Extension
   end
 
   def database_span_name(sql)
-    # Setting span name to the SQL query without obfuscation would
-    # result in PII + cardinality issues.
-    # First attempt to infer the statement type then fallback to
-    # current Otel approach {database.component_name}.{database_instance_name}
-    # https://github.com/open-telemetry/opentelemetry-python/blob/39fa078312e6f41c403aa8cad1868264011f7546/ext/opentelemetry-ext-dbapi/tests/test_dbapi_integration.py#L53
-    # This creates span names like mysql.default, mysql.replica, postgresql.staging etc.
-
-    statement_type = extract_statement_type(sql)
-
-    return statement_type unless statement_type.nil?
-
-    # fallback
-    database_name ? "mysql.#{database_name}" : 'mysql'
+    host = (query_options[:host] || query_options[:hostname]).to_s
+    "#{database_name} #{host}"
   end
 
   def database_name

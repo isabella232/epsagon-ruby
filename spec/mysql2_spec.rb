@@ -62,7 +62,7 @@ describe 'EpsagonMySql2Instrumentation' do
       end
 
       it 'has the correct span name' do
-        expect(span.name).to eq 'select'
+        expect(span.name).to eq 'mysql 127.0.0.1'
       end
 
       it 'has the correct db system' do
