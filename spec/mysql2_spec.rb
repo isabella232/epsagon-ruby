@@ -8,9 +8,14 @@ require 'climate_control'
 EXPORTER = OpenTelemetry::SDK::Trace::Export::InMemorySpanExporter.new
 span_processor = OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(EXPORTER)
 
+#
+# These tests require a local MySQL Database to test against
+# Use this command to start a local instance:
+# docker run --name mysql --rm -p 3306:3306 -e MYSQL_ROOT_HOST=% -e MYSQL_ROOT_PASSWORD=root -d mysql/mysql-server:8.0.25
+#
 describe 'EpsagonMySql2Instrumentation' do
-  let(:exporter) { EXPORTER }
-  let(:span) { exporter.finished_spans.first }
+  let(:exporter)          { EXPORTER }
+  let(:span)              { exporter.finished_spans.first }
   let(:epsagon_token)     { 'abcd' }
   let(:epsagon_app_name)  { 'example_app' }
 
@@ -26,11 +31,6 @@ describe 'EpsagonMySql2Instrumentation' do
     exporter.reset
   end
 
-  after do
-    # Force re-install of instrumentation
-    # instrumentation.instance_variable_set(:@installed, false)
-  end
-
   describe 'tracing' do
     let(:client) do
       ::Mysql2::Client.new(
@@ -42,15 +42,11 @@ describe 'EpsagonMySql2Instrumentation' do
       )
     end
 
-    let(:host) { ENV.fetch('TEST_MYSQL_HOST') { '127.0.0.1' } }
-    let(:port) { ENV.fetch('TEST_MYSQL_PORT') { '3306' } }
-    let(:database) { ENV.fetch('TEST_MYSQL_DB') { 'mysql' } }
-    let(:username) { ENV.fetch('TEST_MYSQL_USER') { 'root' } }
-    let(:password) { ENV.fetch('TEST_MYSQL_PASSWORD') { 'root' } }
-
-    before do
-      # instrumentation.install(config)
-    end
+    let(:host) { ENV.fetch('TEST_MYSQL_HOST', '127.0.0.1') }
+    let(:port) { ENV.fetch('TEST_MYSQL_PORT', '3306') }
+    let(:database) { ENV.fetch('TEST_MYSQL_DB', 'mysql') }
+    let(:username) { ENV.fetch('TEST_MYSQL_USER', 'root') }
+    let(:password) { ENV.fetch('TEST_MYSQL_PASSWORD', 'root') }
 
     it "doesn't have spans before request" do
       expect(exporter.finished_spans.size).to eq 0
