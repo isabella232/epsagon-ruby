@@ -29,7 +29,7 @@ module Epsagon
   module_function
 
   def init(**args)
-    get_config.merge!(args)
+    @@epsagon_config = get_config.merge(args)
     OpenTelemetry::SDK.configure
   end
 
