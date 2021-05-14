@@ -14,6 +14,15 @@ jobs:
     runs-on: ubuntu-latest
     env:
       api-dir: ./api
+    services:
+      mysql:
+        image: mysql/mysql-server:8.0.25
+        env:
+          MYSQL_ROOT_HOST: %
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: mysql
+        ports:
+           - 3306:3306
 
     steps:
       - uses: actions/checkout@v1
@@ -29,7 +38,7 @@ jobs:
 
       - name: Build and test with rspec
         working-directory: ./
-        run: bundle exec rspec spec/config_spec.rb
+        run: bundle exec rspec spec/config_spec.rb spec/mysql2_spec.rb
       # - name: Install Rubocop
       #   run: gem install rubocop
       # - name: Check code
