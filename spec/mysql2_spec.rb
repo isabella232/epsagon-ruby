@@ -81,5 +81,61 @@ describe 'EpsagonMySql2Instrumentation' do
         expect(span.attributes['net.peer.port']).to eq port.to_s
       end
     end
+
+    it 'after error' do
+      expect do
+        client.query('SELECT INVALID')
+      end.to raise_error(Mysql2::Error)
+
+      expect(span.name).to eq 'mysql 127.0.0.1'
+      expect(span.attributes['db.system']).to eq 'mysql'
+      expect(span.attributes['db.name']).to eq 'mysql'
+      expect(span.attributes['db.statement']).to eq 'SELECT INVALID'
+      expect(span.attributes['net.peer.name']).to eq host.to_s
+      expect(span.attributes['net.peer.port']).to eq port.to_s
+
+      expect(span.status.code).to eq(
+        OpenTelemetry::Trace::Status::ERROR
+      )
+      expect(span.events.first.name).to eq 'exception'
+      expect(span.events.first.attributes['exception.type']).to eq 'Mysql2::Error'
+      expect(!span.events.first.attributes['exception.message'].nil?).to be true
+      expect(!span.events.first.attributes['exception.stacktrace'].nil?).to be true
+    end
+
+    it 'extracts statement type that begins the query' do
+      base_sql = 'SELECT 1'
+      explain = 'EXPLAIN'
+      explain_sql = "#{explain} #{base_sql}"
+      client.query(explain_sql)
+
+      expect(span.name).to eq 'mysql 127.0.0.1'
+      expect(span.attributes['db.system']).to eq 'mysql'
+      expect(span.attributes['db.name']).to eq 'mysql'
+      expect(span.attributes['db.statement']).to eq "EXPLAIN SELECT ?"
+      expect(span.attributes['net.peer.name']).to eq host.to_s
+      expect(span.attributes['net.peer.port']).to eq port.to_s
+    end
+
+    it 'uses component.name and instance.name as span.name fallbacks with invalid sql' do
+      expect do
+        client.query('DESELECT 1')
+      end.to raise_error(Mysql2::Error)
+
+      expect(span.name).to eq 'mysql 127.0.0.1'
+      expect(span.attributes['db.system']).to eq 'mysql'
+      expect(span.attributes['db.name']).to eq 'mysql'
+      expect(span.attributes['db.statement']).to eq 'DESELECT ?'
+      expect(span.attributes['net.peer.name']).to eq host.to_s
+      expect(span.attributes['net.peer.port']).to eq port.to_s
+
+      expect(span.status.code).to eq(
+        OpenTelemetry::Trace::Status::ERROR
+      )
+      expect(span.events.first.name).to eq 'exception'
+      expect(span.events.first.attributes['exception.type']).to eq 'Mysql2::Error'
+      expect(!span.events.first.attributes['exception.message'].nil?).to be true
+      expect(!span.events.first.attributes['exception.stacktrace'].nil?).to be true
+    end
   end
 end
