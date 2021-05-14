@@ -41,7 +41,7 @@ module MySql2Extension
 
   def query(sql, options = {})
     tracer.in_span(
-      database_span_name(sql),
+      database_span_name,
       attributes: client_attributes.merge(
         'db.statement' => obfuscate_sql(sql)
       ),
@@ -76,7 +76,7 @@ module MySql2Extension
     %r{'|"|\/\*|\*\/}.match(obfuscated)
   end
 
-  def database_span_name(sql)
+  def database_span_name
     host = (query_options[:host] || query_options[:hostname]).to_s
     "#{database_name} #{host}"
   end
@@ -100,7 +100,6 @@ module MySql2Extension
     }
     attributes['type'] = 'sql'
     attributes['db.name'] = database_name if database_name
-    # attributes['peer.service'] = config[:peer_service] if config[:peer_service]
     attributes
   end
 
@@ -116,7 +115,7 @@ module MySql2Extension
 end
 
 class EpsagonMySql2Instrumentation < OpenTelemetry::Instrumentation::Base
-  install do |config|
+  install do |_config|
     patch_client
   end
 
