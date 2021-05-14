@@ -77,8 +77,7 @@ module MySql2Extension
   end
 
   def database_span_name
-    host = (query_options[:host] || query_options[:hostname]).to_s
-    "#{database_name} #{host}"
+    (query_options[:host] || query_options[:hostname]).to_s
   end
 
   def database_name

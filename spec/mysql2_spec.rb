@@ -58,7 +58,7 @@ describe 'EpsagonMySql2Instrumentation' do
       end
 
       it 'has the correct span name' do
-        expect(span.name).to eq 'mysql 127.0.0.1'
+        expect(span.name).to eq host
       end
 
       it 'has the correct db system' do
@@ -87,7 +87,7 @@ describe 'EpsagonMySql2Instrumentation' do
         client.query('SELECT INVALID')
       end.to raise_error(Mysql2::Error)
 
-      expect(span.name).to eq 'mysql 127.0.0.1'
+      expect(span.name).to eq host
       expect(span.attributes['db.system']).to eq 'mysql'
       expect(span.attributes['db.name']).to eq 'mysql'
       expect(span.attributes['db.statement']).to eq 'SELECT INVALID'
@@ -109,7 +109,7 @@ describe 'EpsagonMySql2Instrumentation' do
       explain_sql = "#{explain} #{base_sql}"
       client.query(explain_sql)
 
-      expect(span.name).to eq 'mysql 127.0.0.1'
+      expect(span.name).to eq host
       expect(span.attributes['db.system']).to eq 'mysql'
       expect(span.attributes['db.name']).to eq 'mysql'
       expect(span.attributes['db.statement']).to eq "EXPLAIN SELECT ?"
@@ -122,7 +122,7 @@ describe 'EpsagonMySql2Instrumentation' do
         client.query('DESELECT 1')
       end.to raise_error(Mysql2::Error)
 
-      expect(span.name).to eq 'mysql 127.0.0.1'
+      expect(span.name).to eq host
       expect(span.attributes['db.system']).to eq 'mysql'
       expect(span.attributes['db.name']).to eq 'mysql'
       expect(span.attributes['db.statement']).to eq 'DESELECT ?'
