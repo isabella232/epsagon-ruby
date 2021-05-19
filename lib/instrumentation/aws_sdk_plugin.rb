@@ -4,6 +4,7 @@ require 'aws-sdk-core'
 require 'opentelemetry/common'
 require 'opentelemetry/sdk'
 
+
 def untraced(&block)
   OpenTelemetry::Trace.with_span(OpenTelemetry::Trace::Span.new, &block)
 end
@@ -17,8 +18,15 @@ end
 
 # Generates Spans for all uses of AWS SDK
 class EpsagonAwsHandler < Seahorse::Client::Handler
+  SPAN_KIND = {
+    'ReceiveMessage' => :consumer,
+    'SendMessage' => :producer,
+    'SendMessageBatch' => :producer
+  }
+
   def call(context)
     span_name = ''
+    span_kind = :client
     attributes = {
       'aws.service' => context.client.class.to_s.split('::')[1].downcase,
       'aws.operation' => context.operation.name
@@ -29,21 +37,65 @@ class EpsagonAwsHandler < Seahorse::Client::Handler
       span_name = attributes['aws.s3.bucket'] if attributes['aws.s3.bucket']
       attributes['aws.s3.key'] = context.params[:key]
       attributes['aws.s3.copy_source'] = context.params[:copy_source]
+    elsif attributes['aws.service'] == 'sqs'
+      span_kind = SPAN_KIND[attributes['aws.operation']] || span_kind
+      queue_url = context.params[:queue_url]
+      attributes['aws.sqs.max_number_of_messages'] = context.params[:max_number_of_messages]
+      attributes['aws.sqs.wait_time_seconds'] = context.params[:wait_time_seconds]
+      attributes['aws.sqs.visibility_timeout'] = context.params[:visibility_timeout]
+      if queue_url
+        attributes['aws.sqs.queue_name'] = queue_url[queue_url.rindex('/')+1..-1]
+        span_name = attributes['aws.sqs.queue_name'] if attributes['aws.sqs.queue_name']
+      end
+      unless config[:epsagon][:metadata_only]
+        if attributes['aws.operation'] == 'SendMessageBatch'
+          messages_attributes = context.params[:entries].map do |m|
+            record = {
+              'message_attributes' => m[:message_attributes].map {|k,v| [k, v.to_h]},
+              'message_body' => m[:message_body],
+            } 
+          end
+          attributes['aws.sqs.record'] = JSON.dump(messages_attributes) if messages_attributes
+        end
+        attributes['aws.sqs.record.message_body'] = context.params[:message_body]
+        attributes['aws.sqs.record.message_attributes'] = JSON.dump(context.params[:message_attributes]) if context.params[:message_attributes]
+      end
     end
-    tracer.in_span(span_name, kind: :client, attributes: attributes) do |span|
+    tracer.in_span(span_name, kind: span_kind, attributes: attributes) do |span|
       untraced do
-        @handler.call(context).tap do
+        @handler.call(context).tap do |result|
           if attributes['aws.service'] == 's3'
             modified = context.http_response.headers[:'last-modified']
-            reformated_modified = modified ? 
+            reformatted_modified = modified ? 
                                   Time.strptime(modified, '%a, %d %b %Y %H:%M:%S %Z')
                                   .strftime('%Y-%m-%dT%H:%M:%SZ') :
                                   nil
-            span.set_attribute('http.status_code', context.http_response.status_code)
             span.set_attribute('aws.s3.content_length', context.http_response.headers[:'content-length']&.to_i)
             span.set_attribute('aws.s3.etag', context.http_response.headers[:etag])
-            span.set_attribute('aws.s3.last_modified', reformated_modified)
+            span.set_attribute('aws.s3.last_modified', reformatted_modified)
+          elsif attributes['aws.service'] == 'sqs'
+            if context.operation.name == 'SendMessageBatch'
+            end
+            if context.operation.name == 'ReceiveMessage'
+              messages_attributes = result.messages.map do |m|
+                record = {
+                  'message_id' => m.message_id,
+                  'attributes' => {
+                    'sender_id' => m.attributes['SenderId'],
+                    'sent_timestamp' => m.attributes['SentTimestamp'],
+                    'aws_trace_header' => m.attributes['AWSTraceHeader'],
+                  }
+                }
+                unless config[:epsagon][:metadata_only]
+                  record['message_attributes'] = m.message_attributes.map {|k,v| [k, v.to_h]}
+                  record['message_body'] = m.body
+                end 
+                record
+              end
+              span.set_attribute('aws.sqs.record', JSON.dump(messages_attributes)) if messages_attributes
+            end
           end
+          span.set_attribute('http.status_code', context.http_response.status_code)
         end
       end
     end
@@ -51,5 +103,9 @@ class EpsagonAwsHandler < Seahorse::Client::Handler
 
   def tracer
     EpsagonAwsSdkInstrumentation.instance.tracer()
+  end
+
+  def config
+    EpsagonAwsSdkInstrumentation.instance.config
   end
 end
