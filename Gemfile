@@ -28,3 +28,7 @@ gem 'faraday', '~> 1.4'
 gem 'sinatra', '~> 2.1'
 
 gem 'aws-sdk-s3', '~> 1.93'
+
+gem 'rspec-rake'
+
+gem 'climate_control'
