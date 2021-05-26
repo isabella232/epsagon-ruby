@@ -40,11 +40,12 @@ class EpsagonAwsHandler < Seahorse::Client::Handler
     elsif attributes['aws.service'] == 'sqs'
       span_kind = SPAN_KIND[attributes['aws.operation']] || span_kind
       queue_url = context.params[:queue_url]
+      queue_name = queue_url ? queue_url[queue_url.rindex('/')+1..-1] : context.params[:queue_name]
       attributes['aws.sqs.max_number_of_messages'] = context.params[:max_number_of_messages]
       attributes['aws.sqs.wait_time_seconds'] = context.params[:wait_time_seconds]
       attributes['aws.sqs.visibility_timeout'] = context.params[:visibility_timeout]
-      if queue_url
-        attributes['aws.sqs.queue_name'] = queue_url[queue_url.rindex('/')+1..-1]
+      if queue_name
+        attributes['aws.sqs.queue_name'] = queue_name
         span_name = attributes['aws.sqs.queue_name'] if attributes['aws.sqs.queue_name']
       end
       unless config[:epsagon][:metadata_only]
@@ -70,11 +71,29 @@ class EpsagonAwsHandler < Seahorse::Client::Handler
                                   Time.strptime(modified, '%a, %d %b %Y %H:%M:%S %Z')
                                   .strftime('%Y-%m-%dT%H:%M:%SZ') :
                                   nil
-            span.set_attribute('aws.s3.content_length', context.http_response.headers[:'content-length']&.to_i)
-            span.set_attribute('aws.s3.etag', context.http_response.headers[:etag])
+            if context.operation.name == 'GetObject'
+              span.set_attribute('aws.s3.content_length', context.http_response.headers[:'content-length']&.to_i)
+            end
+            span.set_attribute('aws.s3.etag', context.http_response.headers[:etag]&.tr('"',''))
             span.set_attribute('aws.s3.last_modified', reformatted_modified)
           elsif attributes['aws.service'] == 'sqs'
+            if context.operation.name == 'SendMessage'
+              span.set_attribute('aws.sqs.record.message_id', result.message_id)
+            end
             if context.operation.name == 'SendMessageBatch'
+              messages_attributes = result.successful.map do |m|
+                record = {'message_id' => m.message_id}
+                unless config[:epsagon][:metadata_only]
+                  context.params[:entries].each do |e|
+                    record.merge!({
+                      'message_attributes' => e[:message_attributes].map {|k,v| [k, v.to_h]},
+                      'message_body' => e[:message_body],
+                    }) if e[:id] == m.id
+                  end
+                end
+                record
+              end
+              span.set_attribute('aws.sqs.record', JSON.dump(messages_attributes)) if messages_attributes
             end
             if context.operation.name == 'ReceiveMessage'
               messages_attributes = result.messages.map do |m|
