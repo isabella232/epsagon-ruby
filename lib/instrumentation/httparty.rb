@@ -9,35 +9,32 @@ module EpsagonHTTPartyExtension
   end
 
   def perform(&block)
-    # return super(&block) unless @started
-
-    @started = true
-    attributes = Hash[OpenTelemetry::Common::HTTP::ClientContext.attributes]
-    path_with_params, query = path.to_s.split('?')
+    path_with_params, query_with_params = path.to_s.split('?')
     path, path_params = path_with_params.split(';')
     use_ssl = path.start_with?('https://')
 
-    attributes.merge!({
-                        'type' => 'http',
-                        'http.method' => http_method,
-                        'http.scheme' => USE_SSL_TO_SCHEME[use_ssl],
-                        'http.request.path' => path
-                      })
-    options[:headers] = {} unless options.respond_to?(:headers)
-    unless config[:epsagon][:metadata_only]
-      headers = options[:headers]
-      attributes.merge!({
-                          'http.request.path_params' => path_params,
-                          # 'http.request.body' => body
-                          'http.request.headers' => headers.to_json,
-                          # 'http.request.headers.User-Agent' => headers['user-agent']
-                        })
-      attributes.merge!(Util.epsagon_query_attributes(query))
-    end
+    method = case http_method
+             when Net::HTTP::Get
+               'GET'
+             end
+
+    attributes = Hash[OpenTelemetry::Common::HTTP::ClientContext.attributes].merge(
+      {
+        'type' => 'http',
+        'http.request.query' => query_with_params,
+        'operation' => method,
+        'http.scheme' => USE_SSL_TO_SCHEME[use_ssl],
+        'http.request.path' => path
+      }
+    )
+
+    options[:headers] = {} if options[:headers].nil?
+
+    final_attribute_set = attributes.merge(add_metadata_attributes(path_params, query_with_params))
 
     tracer.in_span(
       path,
-      attributes: attributes,
+      attributes: final_attribute_set,
       kind: :client
     ) do |span|
       OpenTelemetry.propagation.http.inject(options[:headers])
@@ -48,6 +45,20 @@ module EpsagonHTTPartyExtension
   end
 
   private
+
+  def add_metadata_attributes(path_params, query_with_params)
+    p config[:epsagon][:metadata_only]
+    return {} if config[:epsagon][:metadata_only]
+    puts "ADDING METADATA ATTRIBUTES"
+    headers = options[:headers]
+    p Util.epsagon_query_attributes(query_with_params).merge(
+      {
+        'http.request.path_params' => path_params,
+        'http.request.headers' => headers.to_json,
+        'http.request.headers.User-Agent' => headers['user-agent']
+      }
+    )
+  end
 
   def annotate_span_with_response!(span, response)
     return unless response&.code
