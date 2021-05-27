@@ -21,7 +21,8 @@ class EpsagonAwsHandler < Seahorse::Client::Handler
   SPAN_KIND = {
     'ReceiveMessage' => :consumer,
     'SendMessage' => :producer,
-    'SendMessageBatch' => :producer
+    'SendMessageBatch' => :producer,
+    'Publish' => :producer,
   }
 
   def call(context)
@@ -32,13 +33,13 @@ class EpsagonAwsHandler < Seahorse::Client::Handler
       'aws.operation' => context.operation.name
     }  
     attributes['aws.region'] = context.client.config.region unless attributes['aws.service'] == 's3'
+    span_kind = SPAN_KIND[attributes['aws.operation']] || span_kind
     if attributes['aws.service'] == 's3'
       attributes['aws.s3.bucket'] = context.params[:bucket]
       span_name = attributes['aws.s3.bucket'] if attributes['aws.s3.bucket']
       attributes['aws.s3.key'] = context.params[:key]
       attributes['aws.s3.copy_source'] = context.params[:copy_source]
     elsif attributes['aws.service'] == 'sqs'
-      span_kind = SPAN_KIND[attributes['aws.operation']] || span_kind
       queue_url = context.params[:queue_url]
       queue_name = queue_url ? queue_url[queue_url.rindex('/')+1..-1] : context.params[:queue_name]
       attributes['aws.sqs.max_number_of_messages'] = context.params[:max_number_of_messages]
@@ -60,6 +61,14 @@ class EpsagonAwsHandler < Seahorse::Client::Handler
         end
         attributes['aws.sqs.record.message_body'] = context.params[:message_body]
         attributes['aws.sqs.record.message_attributes'] = JSON.dump(context.params[:message_attributes]) if context.params[:message_attributes]
+      end
+    elsif attributes['aws.service'] == 'sns'
+      topic_arn = context.params[:topic_arn]
+      topic_name = topic_arn ? topic_arn[topic_arn.rindex(':')+1..-1] : context.params[:name] 
+      attributes['aws.sns.topic_name'] = topic_name
+      unless config[:epsagon][:metadata_only]
+        attributes['aws.sns.subject'] = context.params[:subject]
+        attributes['aws.sns.message_attributes'] = JSON.dump(context.params[:message_attributes]) if context.params[:message_attributes]
       end
     end
     tracer.in_span(span_name, kind: span_kind, attributes: attributes) do |span|
@@ -113,6 +122,8 @@ class EpsagonAwsHandler < Seahorse::Client::Handler
               end
               span.set_attribute('aws.sqs.record', JSON.dump(messages_attributes)) if messages_attributes
             end
+          elsif attributes['aws.service'] == 'sns'
+            span.set_attribute('aws.sns.message_id', result.message_id) if context.operation.name == 'Publish'
           end
           span.set_attribute('http.status_code', context.http_response.status_code)
         end
