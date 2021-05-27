@@ -44,3 +44,5 @@ gem 'climate_control'
 gem "httparty", "~> 0.18.1"
 
 gem "byebug", "~> 11.1"
+
+gem 'solargraph'
