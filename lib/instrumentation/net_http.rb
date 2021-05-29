@@ -55,6 +55,7 @@ module EpsagonNetHTTPExtension
 
   def annotate_span_with_response!(span, response)
     return unless response&.code
+    return unless span.respond_to?(:set_attribute)
 
     status_code = response.code.to_i
 

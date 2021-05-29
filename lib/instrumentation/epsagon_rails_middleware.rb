@@ -130,7 +130,7 @@ class EpsagonRackMiddleware
   def request_span_attributes(env:)
     request = Rack::Request.new(env)
     path, path_params = request.path.split(';')
-    request_headers = JSON.generate(Hash[*env.select { |k, _v| k.start_with? 'HTTP_' }
+    request_headers = JSON.generate(Hash[*env.select { |k, _v| k.to_s.start_with? 'HTTP_' }
       .collect { |k, v| [k.sub(/^HTTP_/, ''), v] }
       .collect { |k, v| [k.split('_').collect(&:capitalize).join('-'), v] }
       .sort
