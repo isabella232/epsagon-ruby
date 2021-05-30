@@ -88,7 +88,6 @@ class EpsagonAwsHandler < Seahorse::Client::Handler
             span.set_attribute('aws.s3.etag', context.http_response.headers[:etag]&.tr('"',''))
             span.set_attribute('aws.s3.last_modified', reformatted_modified)
           elsif attributes['aws.service'] == 'sqs'
-            byebug if context.operation.name == 'DeleteMessage'
             if context.operation.name == 'SendMessage'
               span.set_attribute('aws.sqs.record.message_id', result.message_id)
             end
