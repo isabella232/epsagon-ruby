@@ -45,6 +45,7 @@ class EpsagonAwsHandler < Seahorse::Client::Handler
       attributes['aws.sqs.max_number_of_messages'] = context.params[:max_number_of_messages]
       attributes['aws.sqs.wait_time_seconds'] = context.params[:wait_time_seconds]
       attributes['aws.sqs.visibility_timeout'] = context.params[:visibility_timeout]
+      attributes['aws.sqs.message_id'] = context.params[:message_id]
       if queue_name
         attributes['aws.sqs.queue_name'] = queue_name
         span_name = attributes['aws.sqs.queue_name'] if attributes['aws.sqs.queue_name']
@@ -65,9 +66,10 @@ class EpsagonAwsHandler < Seahorse::Client::Handler
     elsif attributes['aws.service'] == 'sns'
       topic_arn = context.params[:topic_arn]
       topic_name = topic_arn ? topic_arn[topic_arn.rindex(':')+1..-1] : context.params[:name] 
-      attributes['aws.sns.topic_name'] = topic_name
+      span_name = attributes['aws.sns.topic_name'] = topic_name if topic_name
       unless config[:epsagon][:metadata_only]
         attributes['aws.sns.subject'] = context.params[:subject]
+        attributes['aws.sns.message'] = context.params[:message]
         attributes['aws.sns.message_attributes'] = JSON.dump(context.params[:message_attributes]) if context.params[:message_attributes]
       end
     end
@@ -86,6 +88,7 @@ class EpsagonAwsHandler < Seahorse::Client::Handler
             span.set_attribute('aws.s3.etag', context.http_response.headers[:etag]&.tr('"',''))
             span.set_attribute('aws.s3.last_modified', reformatted_modified)
           elsif attributes['aws.service'] == 'sqs'
+            byebug if context.operation.name == 'DeleteMessage'
             if context.operation.name == 'SendMessage'
               span.set_attribute('aws.sqs.record.message_id', result.message_id)
             end
