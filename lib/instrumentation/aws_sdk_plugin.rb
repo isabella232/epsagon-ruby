@@ -33,6 +33,7 @@ class EpsagonAwsHandler < Seahorse::Client::Handler
       'aws.operation' => context.operation.name
     }  
     attributes['aws.region'] = context.client.config.region unless attributes['aws.service'] == 's3'
+
     span_kind = SPAN_KIND[attributes['aws.operation']] || span_kind
     if attributes['aws.service'] == 's3'
       attributes['aws.s3.bucket'] = context.params[:bucket]
@@ -128,6 +129,9 @@ class EpsagonAwsHandler < Seahorse::Client::Handler
             span.set_attribute('aws.sns.message_id', result.message_id) if context.operation.name == 'Publish'
           end
           span.set_attribute('http.status_code', context.http_response.status_code)
+          span.status = OpenTelemetry::Trace::Status.http_to_status(
+            context.http_response.status_code
+          )
         end
       end
     end
