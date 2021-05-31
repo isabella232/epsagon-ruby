@@ -5,6 +5,7 @@
   <br />
 </p>
 
+![Gem](https://img.shields.io/gem/v/epsagon)
 [![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release)
 
 # Epsagon Tracing for Ruby
@@ -90,7 +91,7 @@ The same settings from the environment variables and additional parameters can b
 require 'epsagon'
 
 Epsagon.init({
-  metadata_only: true,
+  metadata_only: false,
   debug: true,
   token: '<epsagon-token>',
   app_name: 'example-app-name',
@@ -103,7 +104,7 @@ The supported parameters are:
 |----------------------  |------------------------------ |-------|-------------|-----------------------------------------------------------------------------------|
 |token                   |EPSAGON_TOKEN                  |String |-            |Epsagon account token                                                              |
 |app_name                |EPSAGON_APP_NAME               |String |-            |Application name that will be set for traces                                       |
-|metadata_only           |EPSAGON_METADATA               |Boolean|`False`      |Whether to send only the metadata (`True`) or also the payloads (`False`)          
+|metadata_only           |EPSAGON_METADATA               |Boolean|`True`      |Whether to send only the metadata (`True`) or also the payloads (`False`)          
 |debug                   |EPSAGON_DEBUG                  |Boolean|`False`      |Enable debug prints for troubleshooting                                            
 |max_attribute_size      |EPSAGON_MAX_ATTRIBUTE_SIZE     |Integer|5000         |Max span attribute size in bytes 
 

@@ -19,21 +19,21 @@ Bundler.require
 
 # Epsagon tracing main entry point
 module Epsagon
-  
   DEFAULT_BACKEND = 'opentelemetry.tc.epsagon.com:443/traces'
 
-  @@epsagon_config = {
-    metadata_only: ENV['EPSAGON_METADATA']&.to_s&.downcase != 'false',
-    debug: ENV['EPSAGON_DEBUG']&.to_s&.downcase == 'true',
-    token: ENV['EPSAGON_TOKEN'],
-    app_name: ENV['EPSAGON_APP_NAME'],
-    max_attribute_size: ENV['EPSAGON_MAX_ATTRIBUTE_SIZE'] || 5000,
-    backend: ENV['EPSAGON_BACKEND'] || DEFAULT_BACKEND
-  }
+  @@epsagon_config = {}
 
   module_function
 
   def init(**args)
+    @@epsagon_config = {
+      metadata_only: ENV['EPSAGON_METADATA']&.to_s&.downcase != 'false',
+      debug: ENV['EPSAGON_DEBUG']&.to_s&.downcase == 'true',
+      token: ENV['EPSAGON_TOKEN'] || '',
+      app_name: ENV['EPSAGON_APP_NAME'] || '',
+      max_attribute_size: ENV['EPSAGON_MAX_ATTRIBUTE_SIZE'] || 5000,
+      backend: ENV['EPSAGON_BACKEND'] || DEFAULT_BACKEND
+    }
     @@epsagon_config.merge!(args)
     OpenTelemetry::SDK.configure
   end
@@ -46,7 +46,7 @@ module Epsagon
 
   def epsagon_confs(configurator)
     configurator.resource = OpenTelemetry::SDK::Resources::Resource.telemetry_sdk.merge(
-      OpenTelemetry::SDK::Resources::Resource.create({ 
+      OpenTelemetry::SDK::Resources::Resource.create({
         'application' => @@epsagon_config[:app_name],
         'epsagon.version' => EpsagonConstants::VERSION
       })

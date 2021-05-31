@@ -36,3 +36,7 @@ gem "byebug", "~> 11.1"
 gem "aws-sdk-sqs", "~> 1.38"
 
 gem "aws-sdk-sns", "~> 1.40"
+
+gem 'rspec-rake'
+
+gem 'climate_control'
