@@ -14,7 +14,11 @@ jobs:
     runs-on: ubuntu-latest
     env:
       api-dir: ./api
-
+    services:
+      mysql:
+        image: kennethreitz/httpbin:latest
+        ports:
+           - 80:80
     steps:
       - uses: actions/checkout@v1
       - uses: ruby/setup-ruby@v1
@@ -29,7 +33,7 @@ jobs:
 
       - name: Build and test with rspec
         working-directory: ./
-        run: bundle exec rspec spec/config_spec.rb
+        run: bundle exec rspec spec/httparty_spec.rb
       # - name: Install Rubocop
       #   run: gem install rubocop
       # - name: Check code

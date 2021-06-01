@@ -3,7 +3,7 @@
 require 'epsagon'
 require 'opentelemetry/proto/collector/trace/v1/trace_service_pb'
 
-RSpec.describe do
+skip RSpec.describe do
   pids = {}
 
   before(:all) do
@@ -15,7 +15,7 @@ RSpec.describe do
     sleep 3
   end
 
-  describe 'trace' do
+  skip describe 'trace' do
     it 'gets request data correctly' do
       `curl -X POST http://localhost:4567/foo/bar -d "amir=asdasd"`
       received_message = File.open('tmp/body.pb', &:read)
@@ -30,7 +30,7 @@ RSpec.describe do
     end
   end
 
-  describe 'data integrity' do
+  skip describe 'data integrity' do
     it 'doesn\'t change request data' do
       expect(`curl -X POST http://localhost:4567/foo/bar -d "amir=asdasd"`).to eq(
         `curl -X POST http://localhost:4566/foo/bar -d "amir=asdasd"`
