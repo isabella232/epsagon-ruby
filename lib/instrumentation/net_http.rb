@@ -17,6 +17,7 @@ module EpsagonNetHTTPExtension
   def request(req, body = nil, &block)
     # Do not trace recursive call for starting the connection
     return super(req, body, &block) unless started?
+    return super(req, body, &block) if config[:epsagon][:ignore_domains].any? {|d| @address.include? d}
 
     attributes = Hash[OpenTelemetry::Common::HTTP::ClientContext.attributes]
     path_with_params, query = req.path.split('?')

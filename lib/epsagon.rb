@@ -21,6 +21,7 @@ Bundler.require
 # Epsagon tracing main entry point
 module Epsagon
   DEFAULT_BACKEND = 'opentelemetry.tc.epsagon.com:443/traces'
+  DEFAULT_IGNORE_DOMAINS = ['newrelic.com']
 
   @@epsagon_config = {}
 
@@ -33,7 +34,8 @@ module Epsagon
       token: ENV['EPSAGON_TOKEN'] || '',
       app_name: ENV['EPSAGON_APP_NAME'] || '',
       max_attribute_size: ENV['EPSAGON_MAX_ATTRIBUTE_SIZE'] || 5000,
-      backend: ENV['EPSAGON_BACKEND'] || DEFAULT_BACKEND
+      backend: ENV['EPSAGON_BACKEND'] || DEFAULT_BACKEND,
+      ignore_domains: ENV['EPSAGON_IGNORE_DOMAINS'] || DEFAULT_IGNORE_DOMAINS
     }
     @@epsagon_config.merge!(args)
     OpenTelemetry::SDK.configure
