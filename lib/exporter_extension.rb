@@ -76,10 +76,3 @@ module OpenTelemetry
   end
 end
 
-# puts "Epsagon: timeout while sending trace" if Epsagon.get_config[:debug]
-          # if Epsagon.get_config[:debug] && response && response.code >= 400
-          #   puts "Epsagon: Error while sending trace:"
-          #   puts "Headers: #{response.to_hash.inspect}"
-          #   puts "#{response.code} #{response.class.name} #{response.message}"
-          #   puts response.body
-          # end
