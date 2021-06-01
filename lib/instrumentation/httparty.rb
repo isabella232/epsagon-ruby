@@ -73,7 +73,7 @@ module EpsagonHTTPartyExtension
 
     unless config[:epsagon][:metadata_only]
       span.set_attribute('http.response.headers', Hash[response.each_header.to_a].to_json)
-      span.set_attribute('http.response.body', response.body)
+      span.set_attribute('http.response.body', response.body.to_s)
     end
     span.status = OpenTelemetry::Trace::Status.http_to_status(
       status_code

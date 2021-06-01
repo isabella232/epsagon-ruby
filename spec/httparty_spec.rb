@@ -44,7 +44,8 @@ RSpec.shared_examples 'HTTP Metadata Only Non-Present Fields' do
     'http.request.body',
     'http.request.headers',
     'http.request.headers.User-Agent',
-    'http.response.headers'
+    'http.response.headers',
+    'http.response.body'
   ].each do |attribute|
     it "does not have #{attribute}" do
       expect(span.attributes[attribute]).to eq nil
@@ -54,21 +55,29 @@ end
 
 RSpec.shared_examples 'HTTP With Additional Data' do |request_body|
   it 'has accept-encoding header' do
-    expect(span_headers['Accept-Encoding']).to eq 'gzip, deflate'
+    expect(span_request_headers['Accept-Encoding']).to eq 'gzip, deflate'
   end
 
   it 'has Content-Type header' do
-    expect(span_headers['Content-type']).to eq 'text/html'
+    expect(span_request_headers['Content-type']).to eq 'text/html'
   end
 
   it 'has User Agent' do
-    expect(span_headers['User-Agent']).to eq 'Mozilla/5.0'
+    expect(span_request_headers['User-Agent']).to eq 'Mozilla/5.0'
   end
 
   unless request_body.nil?
     it 'has request body' do
       expect(span.attributes['http.request.body']).to eq request_body
     end
+  end
+
+  it 'has http.response.headers' do
+    expect(span_response_headers).to_not be nil
+  end
+
+  it 'has http.response.body' do
+    expect(span.attributes['http.response.body']).to_not be nil
   end
 end
 
@@ -91,7 +100,8 @@ RSpec.describe 'HTTParty Instrumentation' do
       'User-Agent': 'Mozilla/5.0'
     }
   end
-  let(:span_headers) { JSON.parse(span.attributes['http.request.headers']) }
+  let(:span_request_headers) { JSON.parse(span.attributes['http.request.headers']) }
+  let(:span_response_headers) { JSON.parse(span.attributes['http.response.headers']) }
 
   before(:each) do
     instrumentation.instance_variable_set(:@installed, false)
