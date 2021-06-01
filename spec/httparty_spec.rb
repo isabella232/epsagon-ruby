@@ -36,7 +36,23 @@ RSpec.shared_examples 'HTTP Metadata Only' do |scheme, method, path|
   end
 end
 
-RSpec.shared_examples 'HTTP With Additional Data' do
+RSpec.shared_examples 'HTTP Metadata Only Non-Present Fields' do
+  [
+    'http.request.path_params',
+    'http.request.query',
+    'http.request.query_params',
+    'http.request.body',
+    'http.request.headers',
+    'http.request.headers.User-Agent',
+    'http.response.headers'
+  ].each do |attribute|
+    it "does not have #{attribute}" do
+      expect(span.attributes[attribute]).to eq nil
+    end
+  end
+end
+
+RSpec.shared_examples 'HTTP With Additional Data' do |request_body|
   it 'has accept-encoding header' do
     expect(span_headers['Accept-Encoding']).to eq 'gzip, deflate'
   end
@@ -47,6 +63,12 @@ RSpec.shared_examples 'HTTP With Additional Data' do
 
   it 'has User Agent' do
     expect(span_headers['User-Agent']).to eq 'Mozilla/5.0'
+  end
+
+  unless request_body.nil?
+    it 'has request body' do
+      expect(span.attributes['http.request.body']).to eq request_body
+    end
   end
 end
 
@@ -69,6 +91,7 @@ RSpec.describe 'HTTParty Instrumentation' do
       'User-Agent': 'Mozilla/5.0'
     }
   end
+  let(:span_headers) { JSON.parse(span.attributes['http.request.headers']) }
 
   before(:each) do
     instrumentation.instance_variable_set(:@installed, false)
@@ -97,26 +120,11 @@ RSpec.describe 'HTTParty Instrumentation' do
 
       it_behaves_like 'HTTP Metadata Only', 'https', 'GET', 'https://www.google.com/'
 
-      [
-        'http.request.path_params',
-        'http.request.query',
-        'http.request.query_params',
-        'http.request.body',
-        'http.request.body',
-        'http.request.headers',
-        'http.request.headers.User-Agent',
-        'http.response.headers'
-      ].each do |attribute|
-        it "does not have #{attribute}" do
-          expect(span.attributes[attribute]).to eq nil
-        end
-      end
+      it_behaves_like 'HTTP Metadata Only Non-Present Fields'
     end
 
     describe 'GET HTTPS with additional data' do
-
       let(:metadata_only) { false }
-      let(:span_headers) { JSON.parse(span.attributes['http.request.headers']) }
 
       before(:each) do
         HTTParty.get('https://www.google.com/search?q=Test', headers: request_headers)
@@ -161,13 +169,48 @@ RSpec.describe 'HTTParty Instrumentation' do
   end
 
   describe 'POST' do
-    context 'with metadata_only = true' do
+    context 'with metadata_only = true and no body' do
       let(:metadata_only) { true }
       before do
-        HTTParty.post('http://localhost/post')
+        HTTParty.post('http://localhost/post', headers: request_headers)
       end
 
       it_behaves_like 'HTTP Metadata Only', 'http', 'POST', 'http://localhost/post'
+      it_behaves_like 'HTTP Metadata Only Non-Present Fields'
+    end
+
+    context 'with metadata_only = true and body' do
+      let(:metadata_only) { true }
+      let(:body)          { { subject: 'This is the screen name' } }
+
+      before do
+        HTTParty.post('http://localhost/post', headers: request_headers, body: body.to_json)
+      end
+
+      it_behaves_like 'HTTP Metadata Only', 'http', 'POST', 'http://localhost/post'
+      it_behaves_like 'HTTP Metadata Only Non-Present Fields'
+    end
+
+    context 'with metadata_only = false and no body' do
+      let(:metadata_only) { false }
+      before do
+        HTTParty.post('http://localhost/post', headers: request_headers)
+      end
+
+      it_behaves_like 'HTTP Metadata Only', 'http', 'POST', 'http://localhost/post'
+      it_behaves_like 'HTTP With Additional Data'
+    end
+
+    context 'with metadata_only = false and body' do
+      let(:metadata_only) { false }
+      let(:body)          { { subject: 'This is the screen name' } }
+
+      before do
+        HTTParty.post('http://localhost/post', headers: request_headers, body: body.to_json)
+      end
+
+      it_behaves_like 'HTTP Metadata Only', 'http', 'POST', 'http://localhost/post'
+      it_behaves_like 'HTTP With Additional Data', { subject: 'This is the screen name' }.to_json
     end
   end
 end

@@ -54,11 +54,13 @@ module EpsagonHTTPartyExtension
     return {} if config[:epsagon][:metadata_only]
 
     headers = options[:headers]
+    body = options[:body]
     Util.epsagon_query_attributes(query_with_params).merge(
       {
         'http.request.path_params' => path_params,
         'http.request.headers' => headers.to_json,
-        'http.request.headers.User-Agent' => headers['user-agent']
+        'http.request.headers.User-Agent' => headers['user-agent'],
+        'http.request.body' => body
       }
     )
   end
