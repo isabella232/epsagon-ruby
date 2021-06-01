@@ -5,6 +5,11 @@ require_relative '../util'
 
 module EpsagonHTTPartyExtension
   USE_SSL_TO_SCHEME = { false => 'http', true => 'https' }.freeze
+  SUPPORTED_HTTP_METHODS = {
+    'Net::HTTP::Get' => 'GET',
+    'Net::HTTP::Post' => 'POST',
+    'Net::HTTP::Patch' => 'PATCH'
+  }.freeze
 
   def config
     EpsagonHTTPartyInstrumentation.instance.config
@@ -15,15 +20,7 @@ module EpsagonHTTPartyExtension
     path, path_params = path_with_params.split(';')
     use_ssl = path.start_with?('https://')
     span_name = URI.parse(path).host.downcase
-
-    method = case http_method.to_s
-             when 'Net::HTTP::Get'
-               'GET'
-             when 'Net::HTTP::Post'
-               'POST'
-            when 'Net::HTTP::Patch'
-                'PATCH'
-             end
+    method = SUPPORTED_HTTP_METHODS[http_method.to_s]
 
     attributes = Hash[OpenTelemetry::Common::HTTP::ClientContext.attributes].merge(
       {
