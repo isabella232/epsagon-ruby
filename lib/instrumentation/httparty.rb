@@ -1,5 +1,7 @@
 require 'opentelemetry'
 require 'httparty'
+require_relative '../epsagon_constants'
+require_relative '../util'
 
 module EpsagonHTTPartyExtension
   USE_SSL_TO_SCHEME = { false => 'http', true => 'https' }.freeze
@@ -12,9 +14,10 @@ module EpsagonHTTPartyExtension
     path_with_params, query_with_params = path.to_s.split('?')
     path, path_params = path_with_params.split(';')
     use_ssl = path.start_with?('https://')
+    span_name = URI.parse(path).host.downcase
 
-    method = case http_method
-             when Net::HTTP::Get
+    method = case http_method.to_s
+             when 'Net::HTTP::Get'
                'GET'
              end
 
@@ -29,11 +32,10 @@ module EpsagonHTTPartyExtension
     )
 
     options[:headers] = {} if options[:headers].nil?
-
     final_attribute_set = attributes.merge(add_metadata_attributes(path_params, query_with_params))
 
     tracer.in_span(
-      path,
+      span_name,
       attributes: final_attribute_set,
       kind: :client
     ) do |span|
@@ -47,11 +49,10 @@ module EpsagonHTTPartyExtension
   private
 
   def add_metadata_attributes(path_params, query_with_params)
-    p config[:epsagon][:metadata_only]
     return {} if config[:epsagon][:metadata_only]
-    puts "ADDING METADATA ATTRIBUTES"
+
     headers = options[:headers]
-    p Util.epsagon_query_attributes(query_with_params).merge(
+    Util.epsagon_query_attributes(query_with_params).merge(
       {
         'http.request.path_params' => path_params,
         'http.request.headers' => headers.to_json,
@@ -64,8 +65,8 @@ module EpsagonHTTPartyExtension
     return unless response&.code
 
     status_code = response.code.to_i
-
     span.set_attribute('http.status_code', status_code)
+
     unless config[:epsagon][:metadata_only]
       span.set_attribute('http.response.headers', Hash[response.each_header.to_a].to_json)
       span.set_attribute('http.response.body', response.body)
@@ -82,7 +83,7 @@ end
 
 # HTTParty epsagon instrumentaton
 class EpsagonHTTPartyInstrumentation < OpenTelemetry::Instrumentation::Base
-  VERSION = EpsagonConstants::VERSION
+  VERSION = ::EpsagonConstants::VERSION
 
   install do |_|
     ::HTTParty::Request.send(:prepend, EpsagonHTTPartyExtension)
