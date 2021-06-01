@@ -9,7 +9,8 @@ module EpsagonHTTPartyExtension
     'Net::HTTP::Get' => 'GET',
     'Net::HTTP::Post' => 'POST',
     'Net::HTTP::Patch' => 'PATCH',
-    'Net::HTTP::Put' => 'PUT'
+    'Net::HTTP::Put' => 'PUT',
+    'Net::HTTP::Delete' => 'DELETE'
   }.freeze
 
   def config
