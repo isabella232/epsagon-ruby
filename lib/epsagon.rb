@@ -109,7 +109,6 @@ module SpanExtension
 end
 
 module SidekiqClientMiddlewareExtension
-
   def call(_worker_class, job, _queue, _redis_pool)
     config = OpenTelemetry::Instrumentation::Sidekiq::Instrumentation.instance.config[:epsagon] || {}
     attributes = {
@@ -140,6 +139,7 @@ end
 
 module SidekiqServerMiddlewareExtension
   def call(_worker, msg, _queue)
+    inner_exception = nil
     config = OpenTelemetry::Instrumentation::Sidekiq::Instrumentation.instance.config[:epsagon] || {}
     parent_context = OpenTelemetry.propagation.text.extract(msg)
     attributes = {
@@ -175,7 +175,10 @@ module SidekiqServerMiddlewareExtension
       ) do |runner_span|
         yield
       end
+    rescue Exception => e
+      inner_exception = e
     end
+    raise inner_exception if inner_exception
   end
 end
 
