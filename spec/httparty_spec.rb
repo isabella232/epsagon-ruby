@@ -1,7 +1,11 @@
 # frozen_string_literal: true
 
+#
+# Please note: These tests require a local httpbin as server
+# Run: docker run -p 80:80 kennethreitz/httpbin on your machine
+#
+
 require 'httparty'
-# require 'epsagon'
 require 'opentelemetry/sdk'
 require_relative '../lib/instrumentation/httparty'
 
@@ -121,26 +125,25 @@ RSpec.describe 'HTTParty Instrumentation' do
   end
 
   describe 'GET' do
-    describe 'GET HTTPS with metadata only' do
+    describe 'GET HTTP with metadata only' do
       let(:metadata_only) { true }
 
       before do
-        HTTParty.get('https://www.google.com')
+        HTTParty.get('http://localhost/get')
       end
 
-      it_behaves_like 'HTTP Metadata Only', 'https', 'GET', 'https://www.google.com/'
-
+      it_behaves_like 'HTTP Metadata Only', 'http', 'GET', 'http://localhost/get'
       it_behaves_like 'HTTP Metadata Only Non-Present Fields'
     end
 
-    describe 'GET HTTPS with additional data' do
+    describe 'GET HTTP with additional data' do
       let(:metadata_only) { false }
 
       before(:each) do
-        HTTParty.get('https://www.google.com/search?q=Test', headers: request_headers)
+        HTTParty.get('http://localhost/get?q=Test', headers: request_headers)
       end
 
-      it_behaves_like 'HTTP Metadata Only', 'https', 'GET', 'https://www.google.com/search'
+      it_behaves_like 'HTTP Metadata Only', 'http', 'GET', 'http://localhost/get'
 
       it 'has empty request body' do
         expect(span.attributes['http.request.body']).to eq nil
@@ -149,7 +152,7 @@ RSpec.describe 'HTTParty Instrumentation' do
       it_behaves_like 'HTTP With Additional Data'
     end
 
-    skip describe 'GET HTTPS with Params' do
+    skip describe 'GET HTTP with Params' do
       let(:metadata_only) { false }
 
       before do
@@ -159,12 +162,10 @@ RSpec.describe 'HTTParty Instrumentation' do
 
         instrumentation.install(config)
         instrumentation.instance_variable_set(:@config, config)
-        HTTParty.get('https://www.google.com/search?q=Test')
+        HTTParty.get('http://localhost/get?q=Test')
       end
 
       it 'has the correct http.request.query' do
-        # expect(span.attributes['http.banana.query']).to eq 'q'
-        p span.attributes['http.request.query']
         expect(span.attributes['http.request.query']).to eq 'q=Test'
       end
 
