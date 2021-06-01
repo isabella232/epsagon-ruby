@@ -151,6 +151,11 @@ module SidekiqServerMiddlewareExtension
         'messaging.destination_kind' => 'queue',
         'messaging.sidekiq.redis_url' => Sidekiq.options['url'] || Util.redis_default_url
     }
+    runner_attributes = {
+      'type' => 'sidekiq_worker',
+      'messaging.sidekiq.redis_url' => Sidekiq.options['url'] || Util.redis_default_url,
+
+    }
     unless config[:metadata_only]
       attributes.merge!({
         'messaging.sidekiq.args' => JSON.dump(msg['args'])
@@ -161,10 +166,15 @@ module SidekiqServerMiddlewareExtension
       attributes: attributes,
       with_parent: parent_context,
       kind: :consumer
-    ) do |span|
+    ) do |trigger_span|
       span.add_event('created_at', timestamp: msg['created_at'])
       span.add_event('enqueued_at', timestamp: msg['enqueued_at'])
-      yield
+      tracer.in_span(msg['wrapped']&.to_s || msg['class'],
+        attributes: runner_attributes,
+        kind: :consumer
+      ) do |runner_span|
+        yield
+      end
     end
   end
 end
