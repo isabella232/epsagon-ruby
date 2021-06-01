@@ -16,18 +16,22 @@ span_processor = OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(EXPO
 describe 'EpsagonMySql2Instrumentation' do
   let(:exporter)          { EXPORTER }
   let(:span)              { exporter.finished_spans.first }
-  let(:epsagon_token)     { 'abcd' }
-  let(:epsagon_app_name)  { 'example_app' }
+  let(:instrumentation)   { EpsagonMySql2Instrumentation.instance }
 
   before do
-    ClimateControl.modify EPSAGON_TOKEN: epsagon_token,
-                          EPSAGON_APP_NAME: epsagon_app_name do
-      OpenTelemetry::SDK.configure do |c|
-        c.add_span_processor span_processor
-      end
+    OpenTelemetry::SDK.configure do |c|
+      c.add_span_processor span_processor
     end
 
-    Epsagon.init
+    instrumentation.instance_variable_set(:@installed, false)
+    instrumentation.instance_variable_set(:@config, nil)
+    exporter.reset
+
+    OpenTelemetry::SDK.configure do |c|
+      c.add_span_processor span_processor
+    end
+
+    instrumentation.install({})
     exporter.reset
   end
 
