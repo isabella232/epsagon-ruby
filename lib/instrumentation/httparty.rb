@@ -21,6 +21,8 @@ module EpsagonHTTPartyExtension
                'GET'
              when 'Net::HTTP::Post'
                'POST'
+            when 'Net::HTTP::Patch'
+                'PATCH'
              end
 
     attributes = Hash[OpenTelemetry::Common::HTTP::ClientContext.attributes].merge(
