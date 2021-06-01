@@ -36,6 +36,20 @@ RSpec.shared_examples 'HTTP Metadata Only' do |scheme, method, path|
   end
 end
 
+RSpec.shared_examples 'HTTP With Additional Data' do
+  it 'has accept-encoding header' do
+    expect(span_headers['Accept-Encoding']).to eq 'gzip, deflate'
+  end
+
+  it 'has Content-Type header' do
+    expect(span_headers['Content-type']).to eq 'text/html'
+  end
+
+  it 'has User Agent' do
+    expect(span_headers['User-Agent']).to eq 'Mozilla/5.0'
+  end
+end
+
 RSpec.describe 'HTTParty Instrumentation' do
   let(:exporter)          { EXPORTER }
   let(:span)              { exporter.finished_spans.first }
@@ -46,6 +60,13 @@ RSpec.describe 'HTTParty Instrumentation' do
       epsagon: {
         metadata_only: metadata_only
       }
+    }
+  end
+  let(:request_headers) do
+    {
+      'Content-type': 'text/html',
+      'Accept-Encoding': 'gzip, deflate',
+      'User-Agent': 'Mozilla/5.0'
     }
   end
 
@@ -93,13 +114,7 @@ RSpec.describe 'HTTParty Instrumentation' do
     end
 
     describe 'GET HTTPS with additional data' do
-      let(:request_headers) do
-        {
-          'Content-type': 'text/html',
-          'Accept-Encoding': 'gzip, deflate',
-          'User-Agent': 'Mozilla/5.0'
-        }
-      end
+
       let(:metadata_only) { false }
       let(:span_headers) { JSON.parse(span.attributes['http.request.headers']) }
 
@@ -113,17 +128,7 @@ RSpec.describe 'HTTParty Instrumentation' do
         expect(span.attributes['http.request.body']).to eq nil
       end
 
-      it 'has accept-encoding header' do
-        expect(span_headers['Accept-Encoding']).to eq 'gzip, deflate'
-      end
-
-      it 'has Content-Type header' do
-        expect(span_headers['Content-type']).to eq 'text/html'
-      end
-
-      it 'has User Agent' do
-        expect(span_headers['User-Agent']).to eq 'Mozilla/5.0'
-      end
+      it_behaves_like 'HTTP With Additional Data'
     end
 
     skip describe 'GET HTTPS with Params' do
