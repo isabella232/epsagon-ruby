@@ -167,8 +167,8 @@ module SidekiqServerMiddlewareExtension
       with_parent: parent_context,
       kind: :consumer
     ) do |trigger_span|
-      span.add_event('created_at', timestamp: msg['created_at'])
-      span.add_event('enqueued_at', timestamp: msg['enqueued_at'])
+      trigger_span.add_event('created_at', timestamp: msg['created_at'])
+      trigger_span.add_event('enqueued_at', timestamp: msg['enqueued_at'])
       tracer.in_span(msg['wrapped']&.to_s || msg['class'],
         attributes: runner_attributes,
         kind: :consumer
