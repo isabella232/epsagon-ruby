@@ -14,6 +14,7 @@ require_relative 'instrumentation/aws_sdk'
 require_relative 'instrumentation/rails'
 require_relative 'util'
 require_relative 'epsagon_constants'
+require_relative 'exporter_extension'
 
 Bundler.require
 
@@ -48,7 +49,8 @@ module Epsagon
     configurator.resource = OpenTelemetry::SDK::Resources::Resource.telemetry_sdk.merge(
       OpenTelemetry::SDK::Resources::Resource.create({
         'application' => @@epsagon_config[:app_name],
-        'epsagon.version' => EpsagonConstants::VERSION
+        'epsagon.version' => EpsagonConstants::VERSION,
+        'epsagon.metadata_only' => @@epsagon_config[:metadata_only]
       })
     )
     configurator.use 'EpsagonSinatraInstrumentation', { epsagon: @@epsagon_config }
