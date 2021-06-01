@@ -8,7 +8,8 @@ module EpsagonHTTPartyExtension
   SUPPORTED_HTTP_METHODS = {
     'Net::HTTP::Get' => 'GET',
     'Net::HTTP::Post' => 'POST',
-    'Net::HTTP::Patch' => 'PATCH'
+    'Net::HTTP::Patch' => 'PATCH',
+    'Net::HTTP::Put' => 'PUT'
   }.freeze
 
   def config

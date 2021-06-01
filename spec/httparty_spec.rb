@@ -269,4 +269,50 @@ RSpec.describe 'HTTParty Instrumentation' do
       it_behaves_like 'HTTP With Additional Data', { subject: 'This is the screen name' }.to_json
     end
   end
+
+  describe 'PUT' do
+    context 'with metadata_only = true and no body' do
+      let(:metadata_only) { true }
+      before do
+        HTTParty.put('http://localhost/put', headers: request_headers)
+      end
+
+      it_behaves_like 'HTTP Metadata Only', 'http', 'PUT', 'http://localhost/put'
+      it_behaves_like 'HTTP Metadata Only Non-Present Fields'
+    end
+
+    context 'with metadata_only = true and body' do
+      let(:metadata_only) { true }
+      let(:body)          { { subject: 'This is the screen name' } }
+
+      before do
+        HTTParty.put('http://localhost/put', headers: request_headers, body: body.to_json)
+      end
+
+      it_behaves_like 'HTTP Metadata Only', 'http', 'PUT', 'http://localhost/put'
+      it_behaves_like 'HTTP Metadata Only Non-Present Fields'
+    end
+
+    context 'with metadata_only = false and no body' do
+      let(:metadata_only) { false }
+      before do
+        HTTParty.put('http://localhost/put', headers: request_headers)
+      end
+
+      it_behaves_like 'HTTP Metadata Only', 'http', 'PUT', 'http://localhost/put'
+      it_behaves_like 'HTTP With Additional Data'
+    end
+
+    context 'with metadata_only = false and body' do
+      let(:metadata_only) { false }
+      let(:body)          { { subject: 'This is the screen name' } }
+
+      before do
+        HTTParty.put('http://localhost/put', headers: request_headers, body: body.to_json)
+      end
+
+      it_behaves_like 'HTTP Metadata Only', 'http', 'PUT', 'http://localhost/put'
+      it_behaves_like 'HTTP With Additional Data', { subject: 'This is the screen name' }.to_json
+    end
+  end
 end
