@@ -18,9 +18,9 @@ jobs:
       mysql:
         image: mysql/mysql-server:8.0.25
         env:
-          MYSQL_ROOT_HOST: %
-          MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: mysql
+          MYSQL_ROOT_HOST: '%'
+          MYSQL_ROOT_PASSWORD: 'root'
+          MYSQL_DATABASE: 'mysql'
         ports:
            - 3306:3306
 
