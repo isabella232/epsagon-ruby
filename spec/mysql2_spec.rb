@@ -19,10 +19,6 @@ describe 'EpsagonMySql2Instrumentation' do
   let(:instrumentation)   { EpsagonMySql2Instrumentation.instance }
 
   before do
-    OpenTelemetry::SDK.configure do |c|
-      c.add_span_processor span_processor
-    end
-
     instrumentation.instance_variable_set(:@installed, false)
     instrumentation.instance_variable_set(:@config, nil)
     exporter.reset
