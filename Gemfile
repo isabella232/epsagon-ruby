@@ -13,8 +13,6 @@ gem 'opentelemetry-instrumentation-sinatra', '~> 0.11.0'
 
 gem 'pry', '~> 0.13.1'
 
-gem 'byebug'
-
 gem 'opentelemetry-exporter-otlp', '~> 0.11.0'
 
 gem 'rspec', '~> 3.10'

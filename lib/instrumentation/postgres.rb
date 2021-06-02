@@ -142,6 +142,18 @@ module PostgresExtension
     EpsagonPostgresInstrumentation.instance.tracer
   end
 
+  def lru_cache
+    # When SQL is being sanitized, we know that this cache will
+    # never be more than 50 entries * 2000 characters (so, presumably
+    # 100k bytes - or 97k). When not sanitizing SQL, then this cache
+    # could grow much larger - but the small cache size should otherwise
+    # help contain memory growth. The intended use here is to cache
+    # prepared SQL statements, so that we can attach a reasonable
+    # `db.sql.statement` value to spans when those prepared statements
+    # are executed later on.
+    @lru_cache ||= LruCache.new(50)
+  end
+
   # Rubocop is complaining about 19.31/18 for Metrics/AbcSize.
   # But, getting that metric in line would force us over the
   # module size limit! We can't win here unless we want to start
@@ -149,16 +161,16 @@ module PostgresExtension
   def span_attrs(kind, *args) # rubocop:disable Metrics/AbcSize
     if kind == :query
       operation = extract_operation(args[0])
-      sql = obfuscate_sql(args[0])
+      sql = args[0]
     else
       statement_name = args[0]
 
       if kind == :prepare
-        sql = obfuscate_sql(args[1])
-        # lru_cache[statement_name] = sql
+        sql = args[1]
+        lru_cache[statement_name] = sql
         operation = 'PREPARE'
       else
-        # sql = lru_cache[statement_name]
+        sql = lru_cache[statement_name]
         operation = 'EXECUTE'
       end
     end
@@ -172,7 +184,7 @@ module PostgresExtension
   end
 
   def obfuscate_sql(sql)
-    # return sql unless config[:enable_sql_obfuscation]
+    return sql unless config[:enable_sql_obfuscation]
 
     # Borrowed from opentelemetry-instrumentation-mysql2
     return 'SQL query too large to remove sensitive data ...' if sql.size > 2000
@@ -187,7 +199,7 @@ module PostgresExtension
   end
 
   def span_name(operation)
-    p [validated_operation(operation), database_name].compact.join(' ')
+    [validated_operation(operation), database_name].compact.join(' ')
   end
 
   def validated_operation(operation)
@@ -231,6 +243,47 @@ module PostgresExtension
     end
   end
 end
+
+# frozen_string_literal: true
+
+# Copyright The OpenTelemetry Authors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+
+# A simple LRU cache for the postgres instrumentation.
+class LruCache
+  # Rather than take a dependency on another gem, we implement a very, very basic
+  # LRU cache here. We can take advantage of the fact that Ruby hashes are ordered
+  # to always keep the recently-accessed keys at the top.
+  def initialize(size)
+    raise ArgumentError, 'Invalid size' if size < 1
+
+    @limit = size
+    @store = {}
+  end
+
+  def [](key)
+    # We need to check for the key explicitly, because `nil` is a valid hash value.
+    return unless @store.key?(key)
+
+    # Since the cache contains the item, we delete and re-insert into the hash.
+    # This guarantees that hash keys are ordered by access recency.
+    value = @store.delete(key)
+    @store[key] = value
+
+    value
+  end
+
+  def []=(key, value)
+    # We remove the value if it's already present, so that the hash keys remain ordered
+    # by access recency.
+    @store.delete(key)
+    @store[key] = value
+    @store.shift if @store.length > @limit
+  end
+end
+
 
 class EpsagonPostgresInstrumentation < OpenTelemetry::Instrumentation::Base
   install do |_config|
