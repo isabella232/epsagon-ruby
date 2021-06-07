@@ -67,6 +67,7 @@ module Epsagon
         OpenTelemetry::SDK::Trace::Export::ConsoleSpanExporter.new
       )
     end
+    
     configurator.add_span_processor OpenTelemetry::SDK::Trace::Export::BatchSpanProcessor.new(
       exporter: OpenTelemetry::Exporter::OTLP::Exporter.new(headers: {
                                                               'x-epsagon-token' => @@epsagon_config[:token]
