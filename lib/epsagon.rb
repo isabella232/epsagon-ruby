@@ -64,25 +64,16 @@ module Epsagon
 
     if @@epsagon_config[:debug]
       configurator.add_span_processor OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(
-        OpenTelemetry::Exporter::OTLP::Exporter.new(headers: {
-                                                      'x-epsagon-token' => @@epsagon_config[:token]
-                                                    },
-                                                    endpoint: @@epsagon_config[:backend],
-                                                    insecure: @@epsagon_config[:insecure] || false)
-      )
-
-      configurator.add_span_processor OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(
         OpenTelemetry::SDK::Trace::Export::ConsoleSpanExporter.new
       )
-    else
-      configurator.add_span_processor OpenTelemetry::SDK::Trace::Export::BatchSpanProcessor.new(
-        exporter: OpenTelemetry::Exporter::OTLP::Exporter.new(headers: {
-                                                                'x-epsagon-token' => @@epsagon_config[:token]
-                                                              },
-                                                              endpoint: @@epsagon_config[:backend],
-                                                              insecure: @@epsagon_config[:insecure] || false)
-      )
     end
+    configurator.add_span_processor OpenTelemetry::SDK::Trace::Export::BatchSpanProcessor.new(
+      exporter: OpenTelemetry::Exporter::OTLP::Exporter.new(headers: {
+                                                              'x-epsagon-token' => @@epsagon_config[:token]
+                                                            },
+                                                            endpoint: @@epsagon_config[:backend],
+                                                            insecure: @@epsagon_config[:insecure] || false)
+    )
   end
 end
 

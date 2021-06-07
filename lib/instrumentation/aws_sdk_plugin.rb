@@ -68,6 +68,7 @@ class EpsagonAwsHandler < Seahorse::Client::Handler
       topic_arn = context.params[:topic_arn]
       topic_name = topic_arn ? topic_arn[topic_arn.rindex(':')+1..-1] : context.params[:name] 
       span_name = attributes['aws.sns.topic_name'] = topic_name if topic_name
+      byebug
       unless config[:epsagon][:metadata_only]
         attributes['aws.sns.subject'] = context.params[:subject]
         attributes['aws.sns.message'] = context.params[:message]
