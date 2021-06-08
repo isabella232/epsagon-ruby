@@ -16,6 +16,7 @@ require_relative 'instrumentation/postgres'
 require_relative 'util'
 require_relative 'epsagon_constants'
 require_relative 'exporter_extension'
+require_relative 'arn_parser'
 
 Bundler.require
 
@@ -51,8 +52,16 @@ module Epsagon
 
     response = Net::HTTP.get(URI(metadata_uri))
     ecs_metadata = JSON.parse(response)
+    arn = Arn.parse(ecs_metadata['Labels']['com.amazonaws.ecs.task-arn'])
+
     {
-      'aws.ecs.container_name' => ecs_metadata['Labels']['com.amazonaws.ecs.container-name']
+      'aws.account_id' => arn.account,
+      'aws.region' => arn.region,
+      'aws.ecs.cluster' => ecs_metadata['Labels']['com.amazonaws.ecs.cluster'],
+      'aws.ecs.task_arn' => ecs_metadata['Labels']['com.amazonaws.ecs.task-arn'],
+      'aws.ecs.container_name' => ecs_metadata['Labels']['com.amazonaws.ecs.container-name'],
+      'aws.ecs.task.family' => ecs_metadata['Labels']['com.amazonaws.ecs.task-definition-family'],
+      'aws.ecs.task.revision' => ecs_metadata['Labels']['com.amazonaws.ecs.task-definition-version']
     }
   end
 

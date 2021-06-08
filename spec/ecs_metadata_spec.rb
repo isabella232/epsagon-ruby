@@ -26,14 +26,14 @@ describe 'ECS Metadata' do
   let(:metadata_uri) { 'http://localhost:9000/metadata' }
   let(:example_response) { File.read('./spec/support/aws_ecs_metadata_response.json') }
 
-  # Clear captured spans
   before do
     exporter.reset
     stub_request(:get, 'http://localhost:9000/metadata')
       .to_return(status: 200, body: example_response, headers: {})
 
     ClimateControl.modify EPSAGON_TOKEN: epsagon_token,
-                          EPSAGON_APP_NAME: epsagon_app_name do
+                          EPSAGON_APP_NAME: epsagon_app_name,
+                          ECS_CONTAINER_METADATA_URI: metadata_uri do
       OpenTelemetry::SDK.configure do |c|
         c.add_span_processor span_processor
       end
@@ -44,36 +44,40 @@ describe 'ECS Metadata' do
     ::Rails.application = default_rails_app
   end
 
-  before do
-    # WebMock.disable_net_connect!(allow_localhost: true)
-  end
-
   context 'with ECS environment variable set' do
     before(:each) do
       get '/ok'
     end
 
-    around do |example|
-      ClimateControl.modify ECS_CONTAINER_METADATA_URI: metadata_uri do
-        example.run
-      end
-    end
-
     describe 'span' do
+      let(:resource) { span.resource.instance_values['attributes'] }
+
+      it 'has aws.account_id' do
+        expect(resource['aws.account_id']).to eq '012345678910'
+      end
+
+      it 'has aws.region' do
+        expect(resource['aws.region']).to eq 'us-east-2'
+      end
+
+      it 'has aws.ecs.cluster' do
+        expect(resource['aws.ecs.cluster']).to eq 'default'
+      end
+
+      it 'has aws.ecs.task_arn' do
+        expect(resource['aws.ecs.task_arn']).to eq 'arn:aws:ecs:us-east-2:012345678910:task/9781c248-0edd-4cdb-9a93-f63cb662a5d3'
+      end
+
       it 'has aws.ecs.container_name' do
-        expect(span.resource.instance_values['attributes']['aws.ecs.container_name']).to eq 'nginx-curl'
+        expect(resource['aws.ecs.container_name']).to eq 'nginx-curl'
       end
-    end
-  end
 
-  context 'without ECS environment variable set' do
-    before do
-      get '/ok'
-    end
+      it 'has aws.ecs.task.family' do
+        expect(resource['aws.ecs.task.family']).to eq 'nginx'
+      end
 
-    describe 'span' do
-      it 'does not have aws.ecs.container_name set' do
-        expect(span.resource.instance_values['attributes']['aws.ecs.container_name']).to eq nil
+      it 'has aws.ecs.task.revision' do
+        expect(resource['aws.ecs.task.revision']).to eq '5'
       end
     end
   end
