@@ -42,3 +42,5 @@ gem 'rspec-rake'
 gem 'climate_control'
 
 gem "pg", "~> 1.2"
+
+gem 'pg_query'

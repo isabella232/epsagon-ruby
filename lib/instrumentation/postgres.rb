@@ -1,3 +1,4 @@
+require 'pg_query'
 
 module PostgresExtension
   # A list of SQL commands, from: https://www.postgresql.org/docs/current/sql-commands.html
@@ -176,30 +177,25 @@ module PostgresExtension
     end
 
     attrs = { 'db.operation' => validated_operation(operation), 'db.postgresql.prepared_statement_name' => statement_name }
-    attrs['db.statement'] = sql # if config[:enable_statement_attribute]
+    attrs['db.statement'] = sql
+    attrs['db.sql.table'] = table_name(sql)
     attrs['type'] = 'sql'
     attrs.reject! { |_, v| v.nil? }
 
-    [span_name(operation), client_attributes.merge(attrs)]
+    [database_name, client_attributes.merge(attrs)]
   end
 
-  def obfuscate_sql(sql)
-    return sql unless config[:enable_sql_obfuscation]
+  def table_name(sql)
+    return '' if sql.nil?
 
-    # Borrowed from opentelemetry-instrumentation-mysql2
-    return 'SQL query too large to remove sensitive data ...' if sql.size > 2000
-
-    # From:
-    # https://github.com/newrelic/newrelic-ruby-agent/blob/9787095d4b5b2d8fcaf2fdbd964ed07c731a8b6b/lib/new_relic/agent/database/obfuscator.rb
-    # https://github.com/newrelic/newrelic-ruby-agent/blob/9787095d4b5b2d8fcaf2fdbd964ed07c731a8b6b/lib/new_relic/agent/database/obfuscation_helpers.rb
-    obfuscated = sql.gsub(generated_postgres_regex, '?')
-    obfuscated = 'Failed to obfuscate SQL query - quote characters remained after obfuscation' if PostgresExtension::UNMATCHED_PAIRS_REGEX.match(obfuscated)
-
-    obfuscated
-  end
-
-  def span_name(operation)
-    [validated_operation(operation), database_name].compact.join(' ')
+    parsed_query = PgQuery.parse(sql)
+    if parsed_query.tables.length == 0
+      ''
+    else
+      parsed_query.tables[0]
+    end
+  rescue PgQuery::ParseError
+    ''
   end
 
   def validated_operation(operation)
@@ -244,13 +240,9 @@ module PostgresExtension
   end
 end
 
-# frozen_string_literal: true
-
 # Copyright The OpenTelemetry Authors
 #
 # SPDX-License-Identifier: Apache-2.0
-
-
 # A simple LRU cache for the postgres instrumentation.
 class LruCache
   # Rather than take a dependency on another gem, we implement a very, very basic
