@@ -11,26 +11,23 @@ require 'epsagon'
 
 EXPORTER = OpenTelemetry::SDK::Trace::Export::InMemorySpanExporter.new
 span_processor = OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(EXPORTER)
-
+epsagon_token = 'abcd'
+epsagon_app_name = 'example_app'
+metadata_uri = 'http://localhost:9000/metadata'
+example_response = File.read('./spec/support/aws_ecs_metadata_response.json')
 default_rails_app = nil
 
 describe 'ECS Metadata' do
   include Rack::Test::Methods
 
-  let(:epsagon_token)     { 'abcd' }
-  let(:epsagon_app_name)  { 'example_app' }
   let(:exporter) { EXPORTER }
   let(:spans) { exporter.finished_spans }
   let(:span) { exporter.finished_spans.last }
   let(:rails_app) { default_rails_app }
-  let(:metadata_uri) { 'http://localhost:9000/metadata' }
-  let(:example_response) { File.read('./spec/support/aws_ecs_metadata_response.json') }
 
-  before do
-    exporter.reset
+  before(:all) do
     stub_request(:get, 'http://localhost:9000/metadata')
       .to_return(status: 200, body: example_response, headers: {})
-
     ClimateControl.modify EPSAGON_TOKEN: epsagon_token,
                           EPSAGON_APP_NAME: epsagon_app_name,
                           ECS_CONTAINER_METADATA_URI: metadata_uri do
@@ -39,6 +36,10 @@ describe 'ECS Metadata' do
       end
       Epsagon.init
     end
+  end
+
+  before do
+    exporter.reset
 
     default_rails_app = AppConfig.initialize_app
     ::Rails.application = default_rails_app
