@@ -45,15 +45,28 @@ module Epsagon
     }
   end
 
+  def set_ecs_metadata
+    metadata_uri = ENV['ECS_CONTAINER_METADATA_URI']
+    return {} if metadata_uri.nil?
+
+    response = Net::HTTP.get(URI(metadata_uri))
+    ecs_metadata = JSON.parse(response)
+    {
+      'aws.ecs.container_name' => ecs_metadata['Labels']['com.amazonaws.ecs.container-name']
+    }
+  end
+
   # config opentelemetry with epsaon extensions:
 
   def epsagon_confs(configurator)
+    otel_resource = {
+      'application' => get_config[:app_name],
+      'epsagon.version' => EpsagonConstants::VERSION,
+      'epsagon.metadata_only' => get_config[:metadata_only]
+    }.merge(set_ecs_metadata)
+
     configurator.resource = OpenTelemetry::SDK::Resources::Resource.telemetry_sdk.merge(
-      OpenTelemetry::SDK::Resources::Resource.create({
-        'application' => get_config[:app_name],
-        'epsagon.version' => EpsagonConstants::VERSION,
-        'epsagon.metadata_only' => get_config[:metadata_only]
-      })
+      OpenTelemetry::SDK::Resources::Resource.create(otel_resource)
     )
 
     configurator.use 'EpsagonSinatraInstrumentation', { epsagon: get_config }
