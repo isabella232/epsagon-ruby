@@ -4,6 +4,10 @@ require 'cgi'
 
 # Utilities for epsagon opentelemetry solution
 module Util
+  def self.validate_value(h, k, message, &block)
+    raise ArgumentError.new( "#{k} #{message}. Got #{h[k].class}: #{h[k]}" ) unless yield(h[k])
+  end
+
   def self.epsagon_query_attributes(query_string)
     if query_string&.include? '='
       { 'http.request.query_params' => CGI.parse(query_string).to_json }
@@ -25,7 +29,7 @@ module Util
   		end
   		return value
   	elsif value.instance_of? String then
-  		(value.frozen? value.dup : value).force_encoding('utf-8')[0, max_size]
+  		(value.frozen? ? value.dup : value).force_encoding('utf-8')[0, max_size]
   	else
   		value
   	end

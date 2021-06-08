@@ -38,6 +38,14 @@ module Epsagon
       ignore_domains: ENV['EPSAGON_IGNORE_DOMAINS'] || DEFAULT_IGNORE_DOMAINS
     }
     @@epsagon_config.merge!(args)
+
+    Util.validate_value(@@epsagon_config, :metadata_only, 'Must be a boolean') {|v| !!v == v}
+    Util.validate_value(@@epsagon_config, :debug, 'Must be a boolean') {|v| !!v == v}
+    Util.validate_value(@@epsagon_config, :token, 'Must be a valid Epsagon token') {|v| v.is_a? String and v.size > 10}
+    Util.validate_value(@@epsagon_config, :app_name, 'Must be a String') {|v| v.is_a? String}
+    Util.validate_value(@@epsagon_config, :max_attribute_size, 'Must be an Integer') {|v| v.is_a? Integer}
+    Util.validate_value(@@epsagon_config, :ignore_domains, 'Must be iterable') {|v| v.respond_to?(:each)}
+
     OpenTelemetry::SDK.configure
   end
 
@@ -67,7 +75,7 @@ module Epsagon
         OpenTelemetry::SDK::Trace::Export::ConsoleSpanExporter.new
       )
     end
-    
+
     configurator.add_span_processor OpenTelemetry::SDK::Trace::Export::BatchSpanProcessor.new(
       exporter: OpenTelemetry::Exporter::OTLP::Exporter.new(headers: {
                                                               'x-epsagon-token' => @@epsagon_config[:token]
