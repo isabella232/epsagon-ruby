@@ -25,7 +25,7 @@ module Util
   		end
   		return value
   	elsif value.instance_of? String then
-  		value[0, max_size]
+  		value.force_encoding('utf-8')[0, max_size]
   	else
   		value
   	end
