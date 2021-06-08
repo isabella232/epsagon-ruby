@@ -3,7 +3,6 @@
 require 'pg'
 require 'opentelemetry/sdk'
 require_relative '../lib/instrumentation/postgres'
-require 'byebug'
 
 EXPORTER = OpenTelemetry::SDK::Trace::Export::InMemorySpanExporter.new
 span_processor = OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(EXPORTER)
