@@ -14,7 +14,7 @@ user = ENV.fetch('TEST_POSTGRES_USER', 'postgres')
 dbname = ENV.fetch('TEST_POSTGRES_DB', 'postgres')
 password = ENV.fetch('TEST_POSTGRES_PASSWORD', 'postgres')
 
-RSpec.shared_examples 'sending correct postgres spans' do
+RSpec.shared_examples 'sending correct postgres spans' do |options|
   %i[exec query sync_exec async_exec].each do |method|
     let(:statement) { 'SELECT * FROM Traces;' }
     it "after request (with method: #{method})" do
@@ -23,7 +23,11 @@ RSpec.shared_examples 'sending correct postgres spans' do
       expect(span.name).to eq 'postgres'
       expect(span.attributes['db.system']).to eq 'postgresql'
       expect(span.attributes['db.name']).to eq 'postgres'
-      expect(span.attributes['db.statement']).to eq statement
+      if options[:metadata_only] == true
+        expect(span.attributes['db.statement']).to eq nil
+      else
+        expect(span.attributes['db.statement']).to eq statement
+      end
       expect(span.attributes['db.operation']).to eq 'SELECT'
       # expect(span.attributes['db.connection_string']).to eq 'Server=(localdb)\v11.0; Integrated Security=true;'
       expect(span.attributes['db.user']).to eq 'postgres'
@@ -35,12 +39,19 @@ RSpec.shared_examples 'sending correct postgres spans' do
 
   %i[exec_params async_exec_params sync_exec_params].each do |method|
     it "after request (with method: #{method}) " do
-      client.send(method, 'SELECT $1 AS a', [1])
+      statement = 'SELECT $1 AS a'
+      client.send(method, statement, [1])
 
       expect(span.name).to eq 'postgres'
       expect(span.attributes['db.system']).to eq 'postgresql'
       expect(span.attributes['db.name']).to eq 'postgres'
-      expect(span.attributes['db.statement']).to eq 'SELECT $1 AS a'
+
+      if options[:metadata_only] == true
+        expect(span.attributes['db.statement']).to eq nil
+      else
+        expect(span.attributes['db.statement']).to eq statement
+      end
+
       expect(span.attributes['db.operation']).to eq 'SELECT'
       expect(span.attributes['net.peer.name']).to eq host.to_s
       expect(span.attributes['net.peer.port']).to eq port.to_s
@@ -49,12 +60,19 @@ RSpec.shared_examples 'sending correct postgres spans' do
 
   %i[prepare async_prepare sync_prepare].each do |method|
     it "after preparing a statement (with method: #{method})" do
-      client.send(method, 'foo', 'SELECT $1 AS a')
+      statement = 'SELECT $1 AS a'
+      client.send(method, 'foo', statement)
 
       expect(span.name).to eq 'postgres'
       expect(span.attributes['db.system']).to eq 'postgresql'
       expect(span.attributes['db.name']).to eq 'postgres'
-      expect(span.attributes['db.statement']).to eq 'SELECT $1 AS a'
+
+      if options[:metadata_only] == true
+        expect(span.attributes['db.statement']).to eq nil
+      else
+        expect(span.attributes['db.statement']).to eq statement
+      end
+
       expect(span.attributes['db.operation']).to eq 'PREPARE'
       expect(span.attributes['db.postgresql.prepared_statement_name']).to eq 'foo'
       expect(span.attributes['net.peer.name']).to eq host.to_s
@@ -64,6 +82,7 @@ RSpec.shared_examples 'sending correct postgres spans' do
 
   %i[exec_prepared async_exec_prepared sync_exec_prepared].each do |method|
     it "after executing prepared statement (with method: #{method})" do
+      statement = 'SELECT $1 AS a'
       client.prepare('foo', 'SELECT $1 AS a')
       client.send(method, 'foo', [1])
 
@@ -71,7 +90,11 @@ RSpec.shared_examples 'sending correct postgres spans' do
       expect(last_span.attributes['db.system']).to eq 'postgresql'
       expect(last_span.attributes['db.name']).to eq 'postgres'
       expect(last_span.attributes['db.operation']).to eq 'EXECUTE'
-      expect(last_span.attributes['db.statement']).to eq 'SELECT $1 AS a'
+      if options[:metadata_only] == true
+        expect(span.attributes['db.statement']).to eq nil
+      else
+        expect(span.attributes['db.statement']).to eq statement
+      end
       expect(last_span.attributes['db.postgresql.prepared_statement_name']).to eq 'foo'
       expect(last_span.attributes['net.peer.name']).to eq host.to_s
       expect(last_span.attributes['net.peer.port']).to eq port.to_s
@@ -94,14 +117,19 @@ RSpec.shared_examples 'sending correct postgres spans' do
   end
 
   specify 'after error' do
+    statement = 'SELECT INVALID'
     expect do
-      client.exec('SELECT INVALID')
+      client.exec(statement)
     end.to raise_error PG::UndefinedColumn
 
     expect(span.name).to eq 'postgres'
     expect(span.attributes['db.system']).to eq 'postgresql'
     expect(span.attributes['db.name']).to eq 'postgres'
-    expect(span.attributes['db.statement']).to eq 'SELECT INVALID'
+    if options[:metadata_only] == true
+      expect(span.attributes['db.statement']).to eq nil
+    else
+      expect(span.attributes['db.statement']).to eq statement
+    end
     expect(span.attributes['db.operation']).to eq 'SELECT'
     expect(span.attributes['net.peer.name']).to eq host.to_s
     expect(span.attributes['net.peer.port']).to eq port.to_s
@@ -124,21 +152,30 @@ RSpec.shared_examples 'sending correct postgres spans' do
     expect(span.name).to eq 'postgres'
     expect(span.attributes['db.system']).to eq 'postgresql'
     expect(span.attributes['db.name']).to eq 'postgres'
-    expect(span.attributes['db.statement']).to eq explain_sql
+    if options[:metadata_only] == true
+      expect(span.attributes['db.statement']).to eq nil
+    else
+      expect(span.attributes['db.statement']).to eq explain_sql
+    end
     expect(span.attributes['db.operation']).to eq 'EXPLAIN'
     expect(span.attributes['net.peer.name']).to eq host.to_s
     expect(span.attributes['net.peer.port']).to eq port.to_s
   end
 
   it 'uses database name as span.name fallback with invalid sql' do
+    statement = 'DESELECT 1'
     expect do
-      client.exec('DESELECT 1')
+      client.exec(statement)
     end.to raise_error PG::SyntaxError
 
     expect(span.name).to eq 'postgres'
     expect(span.attributes['db.system']).to eq 'postgresql'
     expect(span.attributes['db.name']).to eq 'postgres'
-    expect(span.attributes['db.statement']).to eq 'DESELECT 1'
+    if options[:metadata_only] == true
+      expect(span.attributes['db.statement']).to eq nil
+    else
+      expect(span.attributes['db.statement']).to eq statement
+    end
     expect(span.attributes['db.operation']).to be nil
     expect(span.attributes['net.peer.name']).to eq host.to_s
     expect(span.attributes['net.peer.port']).to eq port.to_s
@@ -194,7 +231,7 @@ describe 'EpsagonPostgresInstrumentation' do
       c.add_span_processor span_processor
     end
 
-    instrumentation.install({})
+    instrumentation.install(config)
     exporter.reset
   end
 
@@ -219,6 +256,16 @@ describe 'EpsagonPostgresInstrumentation' do
       expect(exporter.finished_spans.size).to eq 0
     end
 
-    it_behaves_like 'sending correct postgres spans'
+    context 'with metadata_only = true' do
+      let(:config) { { epsagon: { metadata_only: true } } }
+
+      it_behaves_like 'sending correct postgres spans', { metadata_only: true }
+    end
+
+    context 'with metadata_only = false' do
+      let(:config) { { epsagon: { metadata_only: false } } }
+
+      it_behaves_like 'sending correct postgres spans', { metadata_only: false }
+    end
   end
 end

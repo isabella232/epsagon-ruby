@@ -139,6 +139,10 @@ module PostgresExtension
     end
   end
 
+  def config
+    EpsagonPostgresInstrumentation.instance.config
+  end
+
   def tracer
     EpsagonPostgresInstrumentation.instance.tracer
   end
@@ -177,7 +181,7 @@ module PostgresExtension
     end
 
     attrs = { 'db.operation' => validated_operation(operation), 'db.postgresql.prepared_statement_name' => statement_name }
-    attrs['db.statement'] = sql
+    attrs['db.statement'] = sql if config[:epsagon][:metadata_only] == false
     attrs['db.sql.table'] = table_name(sql)
     attrs['type'] = 'sql'
     attrs.reject! { |_, v| v.nil? }
@@ -276,7 +280,10 @@ class LruCache
   end
 end
 
-
+#
+# EpsagonPostgresInstrumentation
+# Installs the Instrumentation on the PG::Connection class
+#
 class EpsagonPostgresInstrumentation < OpenTelemetry::Instrumentation::Base
   install do |_config|
     ::PG::Connection.prepend(PostgresExtension)
