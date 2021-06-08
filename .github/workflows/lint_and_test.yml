@@ -35,10 +35,11 @@ jobs:
           gem install bundler
           bundle install --jobs 4 --retry 3
 
-      - name: Run Instrumentation Tests
+      - name: Instrumentation Test
         working-directory: ./
-        run: bundle exec rspec spec/postgres_spec.rb
-      - name: Run integration tests
+        run: bundle exec rspec spec/rails_spec.rb spec/ecs_metadata_spec.rb spec/postgres_spec.rb
+
+      - name: Integration Tests
         working-directory: ./
         run: bundle exec rspec spec/config_spec.rb
       # - name: Install Rubocop
