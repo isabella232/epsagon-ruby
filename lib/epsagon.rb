@@ -22,7 +22,7 @@ Bundler.require
 # Epsagon tracing main entry point
 module Epsagon
   DEFAULT_BACKEND = 'opentelemetry.tc.epsagon.com:443/traces'
-  DEFAULT_IGNORE_DOMAINS = ['newrelic.com']
+  DEFAULT_IGNORE_DOMAINS = ['newrelic.com'].freeze
 
   @@epsagon_config = {}
 
