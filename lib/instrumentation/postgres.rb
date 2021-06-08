@@ -183,7 +183,6 @@ module PostgresExtension
     attrs = { 'db.operation' => validated_operation(operation), 'db.postgresql.prepared_statement_name' => statement_name }
     attrs['db.statement'] = sql if config[:epsagon][:metadata_only] == false
     attrs['db.sql.table'] = table_name(sql)
-    attrs['type'] = 'sql'
     attrs.reject! { |_, v| v.nil? }
 
     [database_name, client_attributes.merge(attrs)]
