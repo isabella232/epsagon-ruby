@@ -189,7 +189,7 @@ class EpsagonRackMiddleware
   def set_attributes_after_request(http_span, _framework_span, status, headers, response)
     unless config[:epsagon][:metadata_only]
       http_span.set_attribute('http.response.headers', JSON.generate(headers))
-      http_span.set_attribute('http.response.body', response.join)
+      http_span.set_attribute('http.response.body', response.join) if response.respond_to?(:join)
     end
 
     http_span.set_attribute('http.status_code', status)
