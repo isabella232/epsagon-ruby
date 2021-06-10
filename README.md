@@ -20,7 +20,7 @@ This package provides tracing to Ruby applications for the collection of distrib
 
 To install Epsagon, run:
 ```sh
-$ gem install epsagon
+gem install epsagon
 ```
 
 ## Usage
@@ -38,9 +38,10 @@ Epsagon.init
 
 Set the token and app name, and run your Ruby command:
 ```sh
-$ export EPSAGON_TOKEN=<epsagon-token>
-$ export EPSAGON_APP_NAME=<app-name>
-$ <ruby command>
+export EPSAGON_TOKEN=<epsagon-token>
+export EPSAGON_APP_NAME=<app-name>
+export EPSAGON_METADATA=false
+<ruby command>
 ```
 
 When using inside a `Dockerfile`, you can use `ENV` instead of `export`.

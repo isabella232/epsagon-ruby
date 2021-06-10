@@ -12,23 +12,30 @@ require_relative 'instrumentation/net_http'
 require_relative 'instrumentation/faraday'
 require_relative 'instrumentation/aws_sdk'
 require_relative 'instrumentation/rails'
+require_relative 'instrumentation/postgres'
 require_relative 'util'
 require_relative 'epsagon_constants'
 require_relative 'exporter_extension'
+require_relative 'arn_parser'
 
 Bundler.require
 
 # Epsagon tracing main entry point
 module Epsagon
   DEFAULT_BACKEND = 'opentelemetry.tc.epsagon.com:443/traces'
-  DEFAULT_IGNORE_DOMAINS = ['newrelic.com']
+  DEFAULT_IGNORE_DOMAINS = ['newrelic.com'].freeze
 
-  @@epsagon_config = {}
+  @@epsagon_config = nil
 
   module_function
 
   def init(**args)
-    @@epsagon_config = {
+    get_config.merge!(args)
+    OpenTelemetry::SDK.configure
+  end
+
+  def get_config
+    @@epsagon_config ||= {
       metadata_only: ENV['EPSAGON_METADATA']&.to_s&.downcase != 'false',
       debug: ENV['EPSAGON_DEBUG']&.to_s&.downcase == 'true',
       token: ENV['EPSAGON_TOKEN'] || '',
@@ -37,6 +44,7 @@ module Epsagon
       backend: ENV['EPSAGON_BACKEND'] || DEFAULT_BACKEND,
       ignore_domains: ENV['EPSAGON_IGNORE_DOMAINS'] || DEFAULT_IGNORE_DOMAINS
     }
+
     @@epsagon_config.merge!(args)
 
     Util.validate_value(@@epsagon_config, :metadata_only, 'Must be a boolean') {|v| !!v == v}
@@ -49,30 +57,65 @@ module Epsagon
     OpenTelemetry::SDK.configure
   end
 
-  def get_config
-    @@epsagon_config
+  def set_ecs_metadata
+    metadata_uri = ENV['ECS_CONTAINER_METADATA_URI']
+    return {} if metadata_uri.nil?
+
+    response = Net::HTTP.get(URI(metadata_uri))
+    ecs_metadata = JSON.parse(response)
+    arn = Arn.parse(ecs_metadata['Labels']['com.amazonaws.ecs.task-arn'])
+
+    {
+      'aws.account_id' => arn.account,
+      'aws.region' => arn.region,
+      'aws.ecs.cluster' => ecs_metadata['Labels']['com.amazonaws.ecs.cluster'],
+      'aws.ecs.task_arn' => ecs_metadata['Labels']['com.amazonaws.ecs.task-arn'],
+      'aws.ecs.container_name' => ecs_metadata['Labels']['com.amazonaws.ecs.container-name'],
+      'aws.ecs.task.family' => ecs_metadata['Labels']['com.amazonaws.ecs.task-definition-family'],
+      'aws.ecs.task.revision' => ecs_metadata['Labels']['com.amazonaws.ecs.task-definition-version']
+    }
   end
 
   # config opentelemetry with epsaon extensions:
 
   def epsagon_confs(configurator)
-    configurator.resource = OpenTelemetry::SDK::Resources::Resource.telemetry_sdk.merge(
-      OpenTelemetry::SDK::Resources::Resource.create({
-        'application' => @@epsagon_config[:app_name],
-        'epsagon.version' => EpsagonConstants::VERSION,
-        'epsagon.metadata_only' => @@epsagon_config[:metadata_only]
-      })
-    )
-    configurator.use 'EpsagonSinatraInstrumentation', { epsagon: @@epsagon_config }
-    configurator.use 'EpsagonNetHTTPInstrumentation', { epsagon: @@epsagon_config }
-    configurator.use 'EpsagonFaradayInstrumentation', { epsagon: @@epsagon_config }
-    configurator.use 'EpsagonAwsSdkInstrumentation', { epsagon: @@epsagon_config }
-    configurator.use 'EpsagonRailsInstrumentation', { epsagon: @@epsagon_config }
-    configurator.use 'OpenTelemetry::Instrumentation::Sidekiq', { epsagon: @@epsagon_config }
+    otel_resource = {
+      'application' => get_config[:app_name],
+      'epsagon.version' => EpsagonConstants::VERSION,
+      'epsagon.metadata_only' => get_config[:metadata_only]
+    }.merge(set_ecs_metadata)
 
-    if @@epsagon_config[:debug]
+    configurator.resource = OpenTelemetry::SDK::Resources::Resource.telemetry_sdk.merge(
+      OpenTelemetry::SDK::Resources::Resource.create(otel_resource)
+    )
+
+    configurator.use 'EpsagonSinatraInstrumentation', { epsagon: get_config }
+    configurator.use 'EpsagonNetHTTPInstrumentation', { epsagon: get_config }
+    configurator.use 'EpsagonFaradayInstrumentation', { epsagon: get_config }
+    configurator.use 'EpsagonAwsSdkInstrumentation', { epsagon: get_config }
+    configurator.use 'EpsagonRailsInstrumentation', { epsagon: get_config }
+    configurator.use 'OpenTelemetry::Instrumentation::Sidekiq', { epsagon: get_config }
+    configurator.use 'EpsagonPostgresInstrumentation', { epsagon: get_config }
+
+    if get_config[:debug]
+      configurator.add_span_processor OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(
+        OpenTelemetry::Exporter::OTLP::Exporter.new(headers: {
+                                                      'x-epsagon-token' => get_config[:token]
+                                                    },
+                                                    endpoint: get_config[:backend],
+                                                    insecure: get_config[:insecure] || false)
+      )
+
       configurator.add_span_processor OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(
         OpenTelemetry::SDK::Trace::Export::ConsoleSpanExporter.new
+      )
+    else
+      configurator.add_span_processor OpenTelemetry::SDK::Trace::Export::BatchSpanProcessor.new(
+        exporter: OpenTelemetry::Exporter::OTLP::Exporter.new(headers: {
+                                                                'x-epsagon-token' => get_config[:token]
+                                                              },
+                                                              endpoint: get_config[:backend],
+                                                              insecure: get_config[:insecure] || false)
       )
     end
 

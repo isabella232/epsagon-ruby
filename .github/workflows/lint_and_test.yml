@@ -14,6 +14,14 @@ jobs:
     runs-on: ubuntu-latest
     env:
       api-dir: ./api
+    services:
+      pg:
+        image: postgres
+        env:
+          POSTGRES_USERNAME: 'postgres'
+          POSTGRES_PASSWORD: 'postgres'
+        ports:
+           - 5432:5432
 
     steps:
       - uses: actions/checkout@v1
@@ -27,7 +35,19 @@ jobs:
           gem install bundler
           bundle install --jobs 4 --retry 3
 
-      - name: Build and test with rspec
+      - name: Instrumentation Test
+        working-directory: ./
+        run: bundle exec rspec spec/postgres_spec.rb
+
+      - name: Instrumentation Test ECS Metadata
+        working-directory: ./
+        run: bundle exec rspec spec/ecs_metadata_spec.rb
+
+      - name: Instrumentation Test Rails
+        working-directory: ./
+        run: bundle exec rspec spec/rails_spec.rb
+
+      - name: Integration Tests
         working-directory: ./
         run: bundle exec rspec spec/config_spec.rb
       # - name: Install Rubocop
