@@ -37,7 +37,11 @@ jobs:
 
       - name: Instrumentation Test
         working-directory: ./
-        run: bundle exec rspec spec/ecs_metadata_spec.rb spec/postgres_spec.rb
+        run: bundle exec rspec spec/postgres_spec.rb
+
+      - name: Instrumentation Test ECS Metadata
+        working-directory: ./
+        run: bundle exec rspec spec/ecs_metadata_spec.rb
 
       - name: Instrumentation Test Rails
         working-directory: ./
