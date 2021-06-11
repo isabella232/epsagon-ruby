@@ -31,6 +31,12 @@ module Epsagon
 
   def init(**args)
     get_config.merge!(args)
+    Util.validate_value(get_config, :metadata_only, 'Must be a boolean') {|v| !!v == v}
+    Util.validate_value(get_config, :debug, 'Must be a boolean') {|v| !!v == v}
+    Util.validate_value(get_config, :token, 'Must be a valid Epsagon token') {|v| v.is_a? String and v.size > 10}
+    Util.validate_value(get_config, :app_name, 'Must be a String') {|v| v.is_a? String}
+    Util.validate_value(get_config, :max_attribute_size, 'Must be an Integer') {|v| v.is_a? Integer}
+    Util.validate_value(get_config, :ignore_domains, 'Must be iterable') {|v| v.respond_to?(:each)}
     OpenTelemetry::SDK.configure
   end
 
@@ -44,17 +50,6 @@ module Epsagon
       backend: ENV['EPSAGON_BACKEND'] || DEFAULT_BACKEND,
       ignore_domains: ENV['EPSAGON_IGNORE_DOMAINS'] || DEFAULT_IGNORE_DOMAINS
     }
-
-    @@epsagon_config.merge!(args)
-
-    Util.validate_value(@@epsagon_config, :metadata_only, 'Must be a boolean') {|v| !!v == v}
-    Util.validate_value(@@epsagon_config, :debug, 'Must be a boolean') {|v| !!v == v}
-    Util.validate_value(@@epsagon_config, :token, 'Must be a valid Epsagon token') {|v| v.is_a? String and v.size > 10}
-    Util.validate_value(@@epsagon_config, :app_name, 'Must be a String') {|v| v.is_a? String}
-    Util.validate_value(@@epsagon_config, :max_attribute_size, 'Must be an Integer') {|v| v.is_a? Integer}
-    Util.validate_value(@@epsagon_config, :ignore_domains, 'Must be iterable') {|v| v.respond_to?(:each)}
-
-    OpenTelemetry::SDK.configure
   end
 
   def set_ecs_metadata
