@@ -4,8 +4,6 @@ source 'https://rubygems.org'
 
 git_source(:github) { |repo_name| "https://github.com/#{repo_name}" }
 
-# gem "rails"
-
 gem 'opentelemetry-api', '~> 0.11.0'
 gem 'opentelemetry-sdk', '~> 0.11.1'
 
@@ -40,3 +38,7 @@ gem "aws-sdk-sns", "~> 1.40"
 gem 'rspec-rake'
 
 gem 'climate_control'
+
+gem "pg", "~> 1.2"
+gem 'pg_query'
+gem 'webmock'

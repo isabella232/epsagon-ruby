@@ -4,10 +4,14 @@ require 'epsagon'
 
 RSpec.describe do
   describe 'Configuration' do
-    let(:epsagon_token)     { 'abcd' }
+    let(:epsagon_token)     { 'abcdabcdabcdabcdabcdabcd' }
     let(:epsagon_app_name)  { 'example_app' }
     let(:epsagon_debug)     { true }
     let(:epsagon_metadata)  { true }
+
+    before do
+      Epsagon.class_variable_set(:@@epsagon_config, nil)
+    end
 
     describe 'retrieves values from environment variables' do
       context 'with set values' do
