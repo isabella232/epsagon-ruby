@@ -7,6 +7,7 @@ require_relative '../epsagon_constants'
 class EpsagonAwsSdkInstrumentation < OpenTelemetry::Instrumentation::Base
   VERSION = EpsagonConstants::VERSION
   SERVICES = %w[
+    SecretsManager
     ACM
     APIGateway
     AppStream
