@@ -13,6 +13,7 @@ require_relative 'instrumentation/faraday'
 require_relative 'instrumentation/aws_sdk'
 require_relative 'instrumentation/rails'
 require_relative 'instrumentation/postgres'
+require_relative 'instrumentation/resque'
 require_relative 'util'
 require_relative 'epsagon_constants'
 require_relative 'exporter_extension'
@@ -91,6 +92,8 @@ module Epsagon
     configurator.use 'EpsagonRailsInstrumentation', { epsagon: get_config }
     configurator.use 'OpenTelemetry::Instrumentation::Sidekiq', { epsagon: get_config }
     configurator.use 'EpsagonPostgresInstrumentation', { epsagon: get_config }
+    configurator.use 'EpsagonResqueInstrumentation', { epsagon: get_config }
+
 
     if get_config[:debug]
       configurator.add_span_processor OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(
