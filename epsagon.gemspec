@@ -14,10 +14,11 @@ Gem::Specification.new do |s|
   s.require_paths = ['lib']
   s.homepage = 'https://github.com/epsagon/epsagon-ruby'
   s.license = 'MIT'
-  s.add_runtime_dependency  'opentelemetry-api', '~> 0.11.0'
-  s.add_runtime_dependency  'opentelemetry-exporter-otlp', '~> 0.11.0'
-  s.add_runtime_dependency  'opentelemetry-instrumentation-sinatra', '~> 0.11.0'
-  s.add_runtime_dependency  'opentelemetry-instrumentation-sidekiq', '~> 0.11.0'
-  s.add_runtime_dependency  'opentelemetry-sdk', '~> 0.11.1'
+  s.add_runtime_dependency  'opentelemetry-api', '~> 0.12.0'
+  s.add_runtime_dependency  'opentelemetry-exporter-otlp', '~> 0.12.0'
+  s.add_runtime_dependency  'opentelemetry-instrumentation-sinatra', '~> 0.12.0'
+  s.add_runtime_dependency  'opentelemetry-instrumentation-sidekiq', '~> 0.12.0'
+  s.add_runtime_dependency  'opentelemetry-instrumentation-grapqhl', '~> 0.12.0'
+  s.add_runtime_dependency  'opentelemetry-sdk', '~> 0.12.0'
   s.add_runtime_dependency  'pg_query', '~> 2.0'
 end
