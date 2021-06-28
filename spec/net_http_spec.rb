@@ -1,12 +1,6 @@
 # frozen_string_literal: true
-
-
-require 'opentelemetry/sdk'
-require 'webmock/rspec'
+require 'spec_helper'
 require_relative '../lib/instrumentation/net_http'
-
-EXPORTER = OpenTelemetry::SDK::Trace::Export::InMemorySpanExporter.new
-span_processor = OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(EXPORTER)
 
 describe 'Net::HTTP::Instrumentation' do
   let(:instrumentation) { EpsagonNetHTTPInstrumentation.instance }
@@ -19,12 +13,6 @@ describe 'Net::HTTP::Instrumentation' do
         ignore_domains: []
       }
     }
-  end
-
-  before(:all) do
-    OpenTelemetry::SDK.configure do |c|
-      c.add_span_processor span_processor
-    end
   end
 
   before do
