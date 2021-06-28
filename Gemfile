@@ -42,3 +42,5 @@ gem 'climate_control'
 gem "pg", "~> 1.2"
 gem 'pg_query'
 gem 'webmock'
+
+gem "aws-sdk-secretsmanager", "~> 1.46"
