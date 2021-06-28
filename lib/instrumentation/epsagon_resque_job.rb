@@ -1,3 +1,5 @@
+require 'json'
+
 module EpsagonResqueModule
   def self.prepended(base)
     class << base
@@ -8,6 +10,7 @@ module EpsagonResqueModule
   # Module to prepend to Resque singleton class
   module ClassMethods
     def push(queue, item)
+      epsagon_conf = config[:epsagon] || {}
       # Check if the job is being wrapped by ActiveJob
       # before retrieving the job class name
       job_class = if item[:class] == 'ActiveJob::QueueAdapters::ResqueAdapter::JobWrapper' && item[:args][0]&.is_a?(Hash)
@@ -15,21 +18,22 @@ module EpsagonResqueModule
                   else
                     item[:class]
                   end
-
       attributes = {
+        'operation' => 'enqueue',
         'messaging.system' => 'resque',
+        'messaging.resque.job_class' => job_class,
         'messaging.destination' => queue.to_s,
         'messaging.destination_kind' => 'queue',
-        'messaging.resque.job_class' => job_class
+        'messaging.resque.redis_url' => Resque.redis.connection[:id]
       }
+      unless epsagon_conf[:metadata_only]
+        attributes.merge!({
+          'messaging.resque.args' => JSON.dump(item)
+        })
+      end
 
-      span_name = case config[:span_naming]
-                  when :job_class then "#{job_class} send"
-                  else "#{queue} send"
-                  end
-
-      tracer.in_span(span_name, attributes: attributes, kind: :producer) do
-        # OpenTelemetry.propagation.inject(item)
+      tracer.in_span(queue.to_s, attributes: attributes, kind: :producer) do
+        OpenTelemetry.propagation.text.inject(item)
         super
       end
     end
@@ -46,6 +50,8 @@ end
 
 module EpsagonResqueJob
   def perform # rubocop:disable Metrics/AbcSize, Metrics/MethodLength, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+    inner_exception = nil
+    epsagon_conf = config[:epsagon] || {}
     job_args = args || []
 
     # Check if the job is being wrapped by ActiveJob
@@ -57,38 +63,42 @@ module EpsagonResqueJob
                 end
 
     attributes = {
-      'messaging.system' => 'resque',
-      'messaging.destination' => queue.to_s,
-      'messaging.destination_kind' => 'queue',
-      'messaging.resque.job_class' => job_class
+        'operation' => 'perform',
+        'messaging.system' => 'resque',
+        'messaging.resque.job_class' => job_class,
+        'messaging.destination' => queue.to_s,
+        'messaging.destination_kind' => 'queue',
+        'messaging.resque.redis_url' => Resque.redis.connection[:id]
+    }
+    runner_attributes = {
+      'type' => 'resque_worker',
+      'messaging.resque.redis_url' => Resque.redis.connection[:id],
+
     }
 
-    span_name = case config[:span_naming]
-                when :job_class then "#{job_class} process"
-                else "#{queue} process"
-                end
+    extracted_context = OpenTelemetry.propagation.text.extract(@payload)
 
-    extracted_context = OpenTelemetry.propagation.extract(@payload)
-
-    OpenTelemetry::Context.with_current(extracted_context) do
-      if config[:propagation_style] == :child
-        tracer.in_span(span_name, attributes: attributes, kind: :consumer) { super }
-      else
-        links = []
-        span_context = OpenTelemetry::Trace.current_span(extracted_context).context
-        links << OpenTelemetry::Trace::Link.new(span_context) if config[:propagation_style] == :link && span_context.valid?
-        span = tracer.start_root_span(span_name, attributes: attributes, links: links, kind: :consumer)
-        OpenTelemetry::Trace.with_span(span) do
-          super
-        rescue Exception => e # rubocop:disable Lint/RescueException
-          span.record_exception(e)
-          span.status = OpenTelemetry::Trace::Status.error("Unhandled exception of type: #{e.class}")
-          raise e
-        ensure
-          span.finish
-        end
-      end
+    unless epsagon_conf[:metadata_only]
+      attributes.merge!({
+        'messaging.resque.args' => JSON.dump(args)
+      })
     end
+    tracer.in_span(
+      queue.to_s,
+      attributes: attributes,
+      with_parent: extracted_context,
+      kind: :consumer
+    ) do |trigger_span|
+      tracer.in_span(job_class,
+        attributes: runner_attributes,
+        kind: :consumer
+      ) do |runner_span|
+        super
+      end
+    rescue Exception => e
+      inner_exception = e
+    end
+    raise inner_exception if inner_exception
   end
 
   private

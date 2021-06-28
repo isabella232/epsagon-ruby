@@ -21,10 +21,13 @@ require_relative 'arn_parser'
 
 Bundler.require
 
+
 # Epsagon tracing main entry point
 module Epsagon
   DEFAULT_BACKEND = 'opentelemetry.tc.epsagon.com:443/traces'
   DEFAULT_IGNORE_DOMAINS = ['newrelic.com'].freeze
+  MUTABLE_CONF_KEYS = Set.new([:metadata_only, :max_attribute_size, :ignore_domains]) 
+
 
   @@epsagon_config = nil
 
@@ -32,13 +35,29 @@ module Epsagon
 
   def init(**args)
     get_config.merge!(args)
-    Util.validate_value(get_config, :metadata_only, 'Must be a boolean') {|v| !!v == v}
-    Util.validate_value(get_config, :debug, 'Must be a boolean') {|v| !!v == v}
-    Util.validate_value(get_config, :token, 'Must be a valid Epsagon token') {|v| v.is_a? String and v.size > 10}
-    Util.validate_value(get_config, :app_name, 'Must be a String') {|v| v.is_a? String}
-    Util.validate_value(get_config, :max_attribute_size, 'Must be an Integer') {|v| v.is_a? Integer}
-    Util.validate_value(get_config, :ignore_domains, 'Must be iterable') {|v| v.respond_to?(:each)}
+    validate(get_config)
     OpenTelemetry::SDK.configure
+    @@initialized = true
+  end
+
+  def validate(config)
+    Util.validate_value(config, :metadata_only, 'Must be a boolean') {|v| !!v == v}
+    Util.validate_value(config, :debug, 'Must be a boolean') {|v| !!v == v}
+    Util.validate_value(config, :token, 'Must be a valid Epsagon token') {|v| v.is_a? String and v.size > 10}
+    Util.validate_value(config, :app_name, 'Must be a String') {|v| v.is_a? String}
+    Util.validate_value(config, :max_attribute_size, 'Must be an Integer') {|v| v.is_a? Integer}
+    Util.validate_value(config, :ignore_domains, 'Must be iterable') {|v| v.respond_to?(:each)}
+    Util.validate_value(config, :ignore_domains, 'Must be iterable') {|v| v.respond_to?(:each)}
+  end
+
+  def set_config(**args)
+    unless args.keys.all? {|a| MUTABLE_CONF_KEYS.include?(a)}
+      raise ArgumentError("only #{MUTABLE_CONF_KEYS.to_a} are mutable after `Epsagon.init`")
+    end
+    Epsagon.init unless @@initialized
+    new_conf = get_config.merge(args)
+    validate(new_conf)
+    @@epsagon_config = new_conf
   end
 
   def get_config
