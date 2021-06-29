@@ -2,6 +2,68 @@
 require 'spec_helper'
 require_relative '../lib/instrumentation/net_http'
 
+shared_examples 'HTTP Request with metadata_only' do
+  it 'has one finished span' do
+    expect(exporter.finished_spans.size).to eq 1
+  end
+
+  it 'has the correct span name' do
+    expect(span.name).to eq 'example.com'
+  end
+
+  it 'has "operation" set' do
+    expect(span.attributes['operation']).to eq 'GET'
+  end
+
+  it 'has "http.scheme" set' do
+    expect(span.attributes['http.scheme']).to eq 'http'
+  end
+
+  it 'has "http.status_code" set' do
+    expect(span.attributes['http.status_code']).to eq 200
+  end
+
+  it 'has "http.request.path" set' do
+    expect(span.attributes['http.request.path']).to eq '/success'
+  end
+
+  it 'has correct span kind' do
+    expect(span.kind).to eq :client
+  end
+
+  it 'does not have "http.request.path_params"' do
+    expect(span.attributes['http.request.path_params']).to be nil
+  end
+
+  it 'does not have "http.request.query"' do
+    expect(span.attributes['http.request.query']).to be nil
+  end
+
+  it 'does not have "http.request.query_params"' do
+    expect(span.attributes['http.request.query_params']).to be nil
+  end
+
+  it 'does not have "http.request.body"' do
+    expect(span.attributes['http.request.body']).to be nil
+  end
+
+  it 'does not have "http.request.headers"' do
+    expect(span.attributes['http.request.headers']).to be nil
+  end
+
+  it 'does not have "http.response.body"' do
+    expect(span.attributes['http.response.body']).to be nil
+  end
+
+  it 'does not have "http.response.headers"' do
+    expect(span.attributes['http.response.headers']).to be nil
+  end
+
+  it 'does not have "http.request.headers.User-Agent"' do
+    expect(span.attributes['http.request.headers.User-Agent']).to be nil
+  end
+end
+
 describe 'Net::HTTP::Instrumentation' do
   let(:instrumentation) { EpsagonNetHTTPInstrumentation.instance }
   let(:exporter) { EXPORTER }
@@ -37,21 +99,30 @@ describe 'Net::HTTP::Instrumentation' do
       expect(exporter.finished_spans.size).to eq 0
     end
 
-    it 'after request with success code' do
-      ::Net::HTTP.get('example.com', '/success')
-      expect(exporter.finished_spans.size).to eq 1
-      expect(span.name).to eq 'example.com'
-      expect(span.attributes['operation']).to eq 'GET'
-      expect(span.attributes['http.scheme']).to eq 'http'
-      expect(span.attributes['http.status_code']).to eq 200
-      expect(span.attributes['http.request.path']).to eq '/success'
-      expect(span.kind).to eq :client
-      assert_requested(
-        :get,
-        'http://example.com/success',
-        headers: { 'Traceparent' => "00-#{span.hex_trace_id}-#{span.hex_span_id}-01" }
-      )
+    context 'with metadata_only' do
+      let(:config) do
+        {
+          epsagon: {
+            metadata_only: true,
+            ignore_domains: []
+          }
+        }
+      end
+
+      before do
+        ::Net::HTTP.get('example.com', '/success')
+      end
+
+      it_behaves_like 'HTTP Request with metadata_only'
     end
+
+    # it 'after request with success code' do
+    #   assert_requested(
+    #     :get,
+    #     'http://example.com/success',
+    #     headers: { 'Traceparent' => "00-#{span.hex_trace_id}-#{span.hex_span_id}-01" }
+    #   )
+    # end
 
     it 'after request with failure code' do
       ::Net::HTTP.post(URI('http://example.com/failure'), 'q' => 'ruby')
