@@ -20,7 +20,7 @@ class EpsagonFaradayInstrumentation < OpenTelemetry::Instrumentation::Base
     ::Faraday::Middleware.register_middleware(
       epsagon_open_telemetry: EpsagonFaradayMiddleware
     )
-    ::Faraday::RackBuilder.include(EpsagonFaradayPatch)
+    ::Faraday::RackBuilder.prepend(EpsagonFaradayPatch)
   end
 
   present do
