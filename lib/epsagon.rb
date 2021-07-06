@@ -145,7 +145,6 @@ module SpanExtension
   BLANKS = [nil, [], '']
 
   def set_mapping_attribute(key, value)
-    require 'byebug';byebug
     value = Util.prepare_attr(key, value, Epsagon.get_config[:max_attribute_size], Epsagon.get_config[:ignored_keys])
     set_attribute(key, value) if value
   end
