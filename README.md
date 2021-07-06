@@ -99,6 +99,18 @@ Epsagon.init({
 })
 ```
 
+Keys to exclude from the trace can be re-configured from code at any point after `Epsagon.init`. e.g.:
+
+```ruby
+Epsagon.add_ignored_key('http.request.headers.Token')
+
+Faraday.get('http://example.com', {}, {'Token' => 'my_secret_token'})
+
+Epsagon.remove_ignored_key('http.request.headers.token')
+
+```
+
+
 The supported parameters are: 
 
 |Parameter               |Environment Variable           |Type   |Default      |Description                                                                        |
@@ -108,6 +120,8 @@ The supported parameters are:
 |metadata_only           |EPSAGON_METADATA               |Boolean|`True`      |Whether to send only the metadata (`True`) or also the payloads (`False`)          
 |debug                   |EPSAGON_DEBUG                  |Boolean|`False`      |Enable debug prints for troubleshooting                                            
 |max_attribute_size      |EPSAGON_MAX_ATTRIBUTE_SIZE     |Integer|5000         |Max span attribute size in bytes 
+|ignore_domains          |EPSAGON_IGNORE_DOMAINS         |List   |newrelic.com |List of domains to be excluded from the trace
+|ignored_keys            |EPSAGON_IGNORED_KEYS           |List   |             |List of keys names to be excluded from the trace
 
 ## Getting Help
 

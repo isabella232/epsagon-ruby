@@ -76,8 +76,8 @@ module Epsagon
       app_name: ENV['EPSAGON_APP_NAME'] || '',
       max_attribute_size: ENV['EPSAGON_MAX_ATTRIBUTE_SIZE'] || 5000,
       backend: ENV['EPSAGON_BACKEND'] || DEFAULT_BACKEND,
-      ignore_domains: ENV['EPSAGON_IGNORE_DOMAINS'] || DEFAULT_IGNORE_DOMAINS,
-      ignored_keys: ENV['EPSAGON_IGNORED_KEYS'] || []
+      ignore_domains: ENV['EPSAGON_IGNORE_DOMAINS']&.split(',') || DEFAULT_IGNORE_DOMAINS,
+      ignored_keys: ENV['EPSAGON_IGNORED_KEYS']&.split(',') || []
     }
   end
 
