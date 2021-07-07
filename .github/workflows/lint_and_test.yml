@@ -2,11 +2,9 @@ name: Lint and Test
 
 on:
   push:
-    paths:
-    - '**'
+    branches: master
   pull_request:
-    paths:
-    - '**'
+    branches: "*"
 
 jobs:
   build:
