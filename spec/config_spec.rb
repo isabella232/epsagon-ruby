@@ -46,48 +46,31 @@ RSpec.describe do
       end
 
       context 'without set environment variable' do
-        before do
-          Epsagon.init
+        it 'throws error when EPSAGON_TOKEN is missing' do
+          expect {
+            ClimateControl.modify EPSAGON_APP_NAME: epsagon_app_name do
+              Epsagon.init
+            end
+          }.to raise_error ArgumentError
         end
 
-        it 'assigns empty string to EPSAGON_TOKEN' do
-          expect(Epsagon.get_config[:token]).to eq ''
-        end
-
-        it 'assigns empty string to EPSAGON_APP_NAME' do
-          expect(Epsagon.get_config[:app_name]).to eq ''
+        it 'throws error when EPSAGON_APP_NAME is missing' do
+          expect {
+            ClimateControl.modify EPSAGON_TOKEN: epsagon_token do
+              Epsagon.init
+            end
+          }.to raise_error ArgumentError
         end
       end
     end
 
     describe 'assigns values passed to init' do
       context 'without any arguments' do
-        before do
-          Epsagon.init
-        end
 
-        it 'assigns empty string to token' do
-          expect(Epsagon.get_config[:token]).to eq ''
-        end
-
-        it 'assigns empty string to app name' do
-          expect(Epsagon.get_config[:app_name]).to eq ''
-        end
-
-        it 'assigns default value of "false" to debug' do
-          expect(Epsagon.get_config[:debug]).to eq false
-        end
-
-        it 'assigns default value of "true" to metadata' do
-          expect(Epsagon.get_config[:metadata_only]).to eq true
-        end
-
-        it 'assigns default value of "5000" to max attribute size' do
-          expect(Epsagon.get_config[:max_attribute_size]).to eq 5000
-        end
-
-        it 'assigns default value of "opentelemetry.tc.epsagon.com:443/traces" to backend' do
-          expect(Epsagon.get_config[:backend]).to eq 'opentelemetry.tc.epsagon.com:443/traces'
+        it 'raises an error' do
+          expect {
+            Epsagon.init
+          }.to raise_error
         end
       end
 
