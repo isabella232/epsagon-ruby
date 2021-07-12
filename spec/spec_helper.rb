@@ -102,6 +102,8 @@ RSpec.configure do |config|
 =end
 end
 
+Dir["./spec/support/**/*.rb"].sort.each {|f| require f}
+
 EXPORTER = OpenTelemetry::SDK::Trace::Export::InMemorySpanExporter.new
 span_processor = OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(EXPORTER)
 
