@@ -11,7 +11,7 @@ require 'epsagon'
 
 EXPORTER = OpenTelemetry::SDK::Trace::Export::InMemorySpanExporter.new
 span_processor = OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(EXPORTER)
-epsagon_token = 'abcd'
+epsagon_token = 'abcdabcdabcdabcdabcd'
 epsagon_app_name = 'example_app'
 metadata_uri = 'http://localhost:9000/metadata'
 example_response = File.read('./spec/support/aws_ecs_metadata_response.json')
