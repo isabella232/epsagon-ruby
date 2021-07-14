@@ -1,3 +1,9 @@
+# This Shared Example expects three parameters
+# include_examples 'HTTP Request with metadata_only' do
+#   let(:operation)   { 'GET' }
+#   let(:status_code) { 200 }
+#   let(:path)        { '/success' }
+# end
 RSpec.shared_examples 'HTTP Request with metadata_only' do
   it 'has one finished span' do
     expect(exporter.finished_spans.size).to eq 1
@@ -8,7 +14,7 @@ RSpec.shared_examples 'HTTP Request with metadata_only' do
   end
 
   it 'has "operation" set' do
-    expect(span.attributes['operation']).to eq 'GET'
+    expect(span.attributes['operation']).to eq operation
   end
 
   it 'has "http.scheme" set' do
@@ -16,11 +22,11 @@ RSpec.shared_examples 'HTTP Request with metadata_only' do
   end
 
   it 'has "http.status_code" set' do
-    expect(span.attributes['http.status_code']).to eq 200
+    expect(span.attributes['http.status_code']).to eq status_code
   end
 
   it 'has "http.request.path" set' do
-    expect(span.attributes['http.request.path']).to eq '/success'
+    expect(span.attributes['http.request.path']).to eq path
   end
 
   it 'has correct span kind' do
@@ -60,7 +66,14 @@ RSpec.shared_examples 'HTTP Request with metadata_only' do
   end
 end
 
-RSpec.shared_examples 'HTTP Request with metadata_only: false' do |options = {}|
+
+# This Shared Example expects three parameters
+# include_examples 'HTTP Request with metadata_only' do
+#   let(:operation)     { 'GET' }
+#   let(:status_code)   { 200 }
+#   let(:path)          { '/success' }
+# end
+RSpec.shared_examples 'HTTP Request with metadata_only: false' do
   it 'has one finished span' do
     expect(exporter.finished_spans.size).to eq 1
   end
@@ -70,7 +83,7 @@ RSpec.shared_examples 'HTTP Request with metadata_only: false' do |options = {}|
   end
 
   it 'has "operation" set' do
-    expect(span.attributes['operation']).to eq 'GET'
+    expect(span.attributes['operation']).to eq operation
   end
 
   it 'has "http.scheme" set' do
@@ -78,11 +91,11 @@ RSpec.shared_examples 'HTTP Request with metadata_only: false' do |options = {}|
   end
 
   it 'has "http.status_code" set' do
-    expect(span.attributes['http.status_code']).to eq 200
+    expect(span.attributes['http.status_code']).to eq status_code
   end
 
   it 'has "http.request.path" set' do
-    expect(span.attributes['http.request.path']).to eq '/success'
+    expect(span.attributes['http.request.path']).to eq path
   end
 
   it 'has correct span kind' do
@@ -95,16 +108,6 @@ RSpec.shared_examples 'HTTP Request with metadata_only: false' do |options = {}|
 
   it 'has "http.request.query"' do
     expect(span.attributes['http.request.query']).to be nil
-  end
-
-  if options.fetch(:query_params, false)
-    it 'has "http.request.query_params"' do
-      expect(span.attributes['http.request.query_params']).to_not be nil
-    end
-  else
-    it 'has empty "http.request.query_params"' do
-      expect(span.attributes['http.request.query_params']).to be nil
-    end
   end
 
   it 'has "http.request.body"' do
@@ -126,5 +129,17 @@ RSpec.shared_examples 'HTTP Request with metadata_only: false' do |options = {}|
 
   it 'has "http.request.headers.User-Agent"' do
     expect(span.attributes['http.request.headers.User-Agent']).to_not be nil
+  end
+end
+
+RSpec.shared_examples 'HTTP Request without query params' do
+  it 'has empty "http.request.query_params"' do
+    expect(span.attributes['http.request.query_params']).to be nil
+  end
+end
+
+RSpec.shared_examples 'HTTP Request with query params' do
+  it 'has "http.request.query_params"' do
+    expect(span.attributes['http.request.query_params']).to_not be nil
   end
 end

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 require 'spec_helper'
 require_relative '../lib/instrumentation/net_http'
+require 'byebug'
 
 describe 'Net::HTTP::Instrumentation' do
   let(:instrumentation) { EpsagonNetHTTPInstrumentation.instance }
@@ -34,11 +35,11 @@ describe 'Net::HTTP::Instrumentation' do
   end
 
   describe '#request' do
-    it 'before request' do
+    specify 'before request' do
       expect(exporter.finished_spans.size).to eq 0
     end
 
-    context 'with metadata_only' do
+    describe 'with metadata_only' do
       let(:config) do
         {
           epsagon: {
@@ -52,10 +53,14 @@ describe 'Net::HTTP::Instrumentation' do
         ::Net::HTTP.get('example.com', '/success')
       end
 
-      it_behaves_like 'HTTP Request with metadata_only'
+      include_examples 'HTTP Request with metadata_only' do
+        let(:operation)   { 'GET' }
+        let(:status_code) { 200 }
+        let(:path)        { '/success' }
+      end
     end
 
-    context 'with metadata_only = false' do
+    describe 'with metadata_only = false' do
       let(:config) do
         {
           epsagon: {
@@ -70,7 +75,12 @@ describe 'Net::HTTP::Instrumentation' do
           ::Net::HTTP.get('example.com', '/success')
         end
 
-        it_behaves_like 'HTTP Request with metadata_only: false'
+        include_examples 'HTTP Request with metadata_only: false' do
+          let(:operation)   { 'GET' }
+          let(:status_code) { 200 }
+          let(:path)        { '/success' }
+        end
+        include_examples 'HTTP Request without query params'
       end
 
       context 'with query params' do
@@ -79,50 +89,57 @@ describe 'Net::HTTP::Instrumentation' do
           ::Net::HTTP.get(uri) # => String
         end
 
-        it_behaves_like 'HTTP Request with metadata_only: false', {query_params: true}
+        include_examples 'HTTP Request with metadata_only: false' do
+          let(:operation)   { 'GET' }
+          let(:status_code) { 200 }
+          let(:path)        { '/success' }
+        end
+        include_examples 'HTTP Request with query params'
       end
     end
 
-    it 'after request with failure code' do
-      ::Net::HTTP.post(URI('http://example.com/failure'), 'q' => 'ruby')
+    context 'failure' do
+      it 'captures the http error' do
+        ::Net::HTTP.post(URI('http://example.com/failure'), 'q' => 'ruby')
 
-      expect(exporter.finished_spans.size).to eq 1
-      expect(span.name).to eq 'example.com'
-      expect(span.attributes['operation']).to eq 'POST'
-      expect(span.attributes['http.scheme']).to eq 'http'
-      expect(span.attributes['http.status_code']).to eq 500
-      expect(span.attributes['http.request.path']).to eq '/failure'
-      expect(span.kind).to eq :client
-      assert_requested(
-        :post,
-        'http://example.com/failure',
-        headers: { 'Traceparent' => "00-#{span.hex_trace_id}-#{span.hex_span_id}-01" }
-      )
-    end
+        expect(exporter.finished_spans.size).to eq 1
+        expect(span.name).to eq 'example.com'
+        expect(span.attributes['operation']).to eq 'POST'
+        expect(span.attributes['http.scheme']).to eq 'http'
+        expect(span.attributes['http.status_code']).to eq 500
+        expect(span.attributes['http.request.path']).to eq '/failure'
+        expect(span.kind).to eq :client
+        assert_requested(
+          :post,
+          'http://example.com/failure',
+          headers: { 'Traceparent' => "00-#{span.hex_trace_id}-#{span.hex_span_id}-01" }
+        )
+      end
 
-    it 'after request timeout' do
-      expect do
-        ::Net::HTTP.get(URI('https://example.com/timeout'))
-      end.to raise_error Net::OpenTimeout
+      it 'captures request timeout' do
+        expect do
+          ::Net::HTTP.get(URI('https://example.com/timeout'))
+        end.to raise_error Net::OpenTimeout
 
-      expect(exporter.finished_spans.size).to eq 1
-      expect(span.name).to eq 'example.com'
-      expect(span.attributes['operation']).to eq 'GET'
-      expect(span.attributes['http.scheme']).to eq 'https'
-      expect(span.attributes['http.status_code']).to be nil
-      expect(span.attributes['http.request.path']).to eq '/timeout'
-      expect(span.kind).to eq :client
-      expect(span.status.code).to eq(
-        OpenTelemetry::Trace::Status::ERROR
-      )
-      expect(span.status.description).to eq(
-        'Unhandled exception of type: Net::OpenTimeout'
-      )
-      assert_requested(
-        :get,
-        'https://example.com/timeout',
-        headers: { 'Traceparent' => "00-#{span.hex_trace_id}-#{span.hex_span_id}-01" }
-      )
+        expect(exporter.finished_spans.size).to eq 1
+        expect(span.name).to eq 'example.com'
+        expect(span.attributes['operation']).to eq 'GET'
+        expect(span.attributes['http.scheme']).to eq 'https'
+        expect(span.attributes['http.status_code']).to be nil
+        expect(span.attributes['http.request.path']).to eq '/timeout'
+        expect(span.kind).to eq :client
+        expect(span.status.code).to eq(
+          OpenTelemetry::Trace::Status::ERROR
+        )
+        expect(span.status.description).to eq(
+          'Unhandled exception of type: Net::OpenTimeout'
+        )
+        assert_requested(
+          :get,
+          'https://example.com/timeout',
+          headers: { 'Traceparent' => "00-#{span.hex_trace_id}-#{span.hex_span_id}-01" }
+        )
+      end
     end
 
     it 'merges http client attributes' do
