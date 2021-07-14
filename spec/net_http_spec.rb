@@ -19,6 +19,7 @@ describe 'Net::HTTP::Instrumentation' do
     exporter.reset
     WebMock.disable_net_connect!(allow_localhost: true)
     stub_request(:get, 'http://example.com/success').to_return(status: 200)
+    stub_request(:get, 'http://example.com/success?count=10').to_return(status: 200)
     stub_request(:post, 'http://example.com/failure').to_return(status: 500)
     stub_request(:get, 'https://example.com/timeout').to_timeout
 
@@ -52,6 +53,34 @@ describe 'Net::HTTP::Instrumentation' do
       end
 
       it_behaves_like 'HTTP Request with metadata_only'
+    end
+
+    context 'with metadata_only = false' do
+      let(:config) do
+        {
+          epsagon: {
+            metadata_only: false,
+            ignore_domains: []
+          }
+        }
+      end
+
+      context 'without query params' do
+        before do
+          ::Net::HTTP.get('example.com', '/success')
+        end
+
+        it_behaves_like 'HTTP Request with metadata_only: false'
+      end
+
+      context 'with query params' do
+        before do
+          uri = URI('http://example.com/success?count=10')
+          ::Net::HTTP.get(uri) # => String
+        end
+
+        it_behaves_like 'HTTP Request with metadata_only: false', {query_params: true}
+      end
     end
 
     it 'after request with failure code' do

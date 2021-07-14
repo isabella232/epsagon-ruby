@@ -60,7 +60,7 @@ RSpec.shared_examples 'HTTP Request with metadata_only' do
   end
 end
 
-RSpec.shared_examples 'HTTP Request with metadata_only: false' do
+RSpec.shared_examples 'HTTP Request with metadata_only: false' do |options = {}|
   it 'has one finished span' do
     expect(exporter.finished_spans.size).to eq 1
   end
@@ -97,8 +97,14 @@ RSpec.shared_examples 'HTTP Request with metadata_only: false' do
     expect(span.attributes['http.request.query']).to be nil
   end
 
-  it 'has "http.request.query_params"' do
-    expect(span.attributes['http.request.query_params']).to be nil
+  if options.fetch(:query_params, false)
+    it 'has "http.request.query_params"' do
+      expect(span.attributes['http.request.query_params']).to_not be nil
+    end
+  else
+    it 'has empty "http.request.query_params"' do
+      expect(span.attributes['http.request.query_params']).to be nil
+    end
   end
 
   it 'has "http.request.body"' do
@@ -106,17 +112,8 @@ RSpec.shared_examples 'HTTP Request with metadata_only: false' do
   end
 
   it 'has "http.request.headers"' do
-    expect(span.attributes['http.request.headers']).to_not be nil
-  end
-
-  describe 'http.request.headers' do
-    let(:headers) { span.attributes['http.request.headers'] }
-
-    ['accept-encoding', 'accept', 'user-agent'].each do |header_name|
-      it "has #{header_name} header" do
-        expect(headers[header_name].length).to be > 0
-      end
-    end
+    headers = JSON.parse(span.attributes['http.request.headers'])
+    expect(headers.keys.length).to be > 0
   end
 
   it 'has "http.response.body"' do
