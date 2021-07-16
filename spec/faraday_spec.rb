@@ -197,13 +197,6 @@ describe 'Faraday::Middlewares::TracerMiddleware' do
   end
 
   skip describe 'first span' do
-    it 'has http.status_code 404' do
-    end
-
-    it 'has http.status_code 500' do
-
-    end
-
     #TODO: Check if we actually need this
     skip it 'merges http client attributes' do
       client_context_attrs = {
