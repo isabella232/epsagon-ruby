@@ -28,7 +28,6 @@ module Epsagon
   DEFAULT_IGNORE_DOMAINS = ['newrelic.com'].freeze
   MUTABLE_CONF_KEYS = Set.new([:metadata_only, :max_attribute_size, :ignore_domains, :ignored_keys]) 
 
-
   @@epsagon_config = nil
 
   module_function
@@ -43,8 +42,8 @@ module Epsagon
   def validate(config)
     Util.validate_value(config, :metadata_only, 'Must be a boolean') {|v| !!v == v}
     Util.validate_value(config, :debug, 'Must be a boolean') {|v| !!v == v}
-    Util.validate_value(config, :token, 'Must be a valid Epsagon token') {|v| v.is_a? String and v.size > 10}
-    Util.validate_value(config, :app_name, 'Must be a String') {|v| v.is_a? String}
+    Util.validate_value(config, :token, 'Must be a valid Epsagon token') {|v| (v.is_a? String) && (v.size > 10) }
+    Util.validate_value(config, :app_name, 'Must be a String') {|v| (v.is_a? String) && (v.size > 0) }
     Util.validate_value(config, :max_attribute_size, 'Must be an Integer') {|v| v.is_a? Integer}
     Util.validate_value(config, :ignore_domains, 'Must be iterable') {|v| v.respond_to?(:each)}
     Util.validate_value(config, :ignored_keys, 'Must be iterable') {|v| v.respond_to?(:each)}

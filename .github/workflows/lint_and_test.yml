@@ -2,11 +2,9 @@ name: Lint and Test
 
 on:
   push:
-    paths:
-    - '**'
+    branches: "*"
   pull_request:
-    paths:
-    - '**'
+    branches: "*"
 
 jobs:
   build:
@@ -14,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       api-dir: ./api
+      RAILS_VERSION: ${{ matrix.rails }}
     services:
       pg:
         image: postgres
@@ -22,12 +21,25 @@ jobs:
           POSTGRES_PASSWORD: 'postgres'
         ports:
            - 5432:5432
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby: ["2.7","3.0"]
+        rails: ["5.0", "5.1", "5.2", "6.0", "6.1"]
+        exclude:
+          - ruby: "3.0"
+            rails: "5.0"
+          - ruby: "3.0"
+            rails: "5.1"
+          - ruby: "3.0"
+            rails: "5.2"
 
     steps:
       - uses: actions/checkout@v1
-      - uses: ruby/setup-ruby@v1
+      - name: Install Ruby ${{ matrix.ruby }}
+        uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 2.7.2
+          ruby-version: ${{ matrix.ruby }}
 
       - name: Run bundle install
         working-directory: ./
@@ -50,7 +62,3 @@ jobs:
       - name: Integration Tests
         working-directory: ./
         run: bundle exec rspec spec/config_spec.rb
-      # - name: Install Rubocop
-      #   run: gem install rubocop
-      # - name: Check code
-      #   run: rubocop
