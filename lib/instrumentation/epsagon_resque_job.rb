@@ -28,7 +28,7 @@ module EpsagonResqueModule
       }
       unless epsagon_conf[:metadata_only]
         attributes.merge!({
-          'messaging.resque.args' => JSON.dump(item)
+          'messaging.resque.args' => item
         })
       end
 
@@ -80,7 +80,7 @@ module EpsagonResqueJob
 
     unless epsagon_conf[:metadata_only]
       attributes.merge!({
-        'messaging.resque.args' => JSON.dump(args)
+        'messaging.resque.args' => args
       })
     end
     tracer.in_span(

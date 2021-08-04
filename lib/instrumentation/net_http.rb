@@ -34,7 +34,7 @@ module EpsagonNetHTTPExtension
       attributes.merge!({
                           'http.request.path_params' => path_params,
                           'http.request.body' => body,
-                          'http.request.headers' => headers.to_json,
+                          'http.request.headers' => Hash[headers],
                           'http.request.headers.User-Agent' => headers['user-agent']
                         })
       attributes.merge!(Util.epsagon_query_attributes(query))
@@ -62,7 +62,7 @@ module EpsagonNetHTTPExtension
 
     span.set_attribute('http.status_code', status_code)
     unless config[:epsagon][:metadata_only]
-      span.set_attribute('http.response.headers', Hash[response.each_header.to_a].to_json)
+      span.set_attribute('http.response.headers', Hash[response.each_header.to_a])
       span.set_attribute('http.response.body', response.body)
     end
     span.status = OpenTelemetry::Trace::Status.http_to_status(

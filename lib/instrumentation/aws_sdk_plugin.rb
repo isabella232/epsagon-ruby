@@ -59,10 +59,10 @@ class EpsagonAwsHandler < Seahorse::Client::Handler
               'message_body' => m[:message_body],
             } 
           end
-          attributes['aws.sqs.record'] = JSON.dump(messages_attributes) if messages_attributes
+          attributes['aws.sqs.record'] = messages_attributes if messages_attributes
         end
         attributes['aws.sqs.record.message_body'] = context.params[:message_body]
-        attributes['aws.sqs.record.message_attributes'] = JSON.dump(context.params[:message_attributes]) if context.params[:message_attributes]
+        attributes['aws.sqs.record.message_attributes'] = context.params[:message_attributes] if context.params[:message_attributes]
       end
     elsif attributes['aws.service'] == 'sns'
       topic_arn = context.params[:topic_arn]
@@ -71,7 +71,7 @@ class EpsagonAwsHandler < Seahorse::Client::Handler
       unless config[:epsagon][:metadata_only]
         attributes['aws.sns.subject'] = context.params[:subject]
         attributes['aws.sns.message'] = context.params[:message]
-        attributes['aws.sns.message_attributes'] = JSON.dump(context.params[:message_attributes]) if context.params[:message_attributes]
+        attributes['aws.sns.message_attributes'] = context.params[:message_attributes] if context.params[:message_attributes]
       end
     end
     tracer.in_span(span_name, kind: span_kind, attributes: attributes) do |span|
@@ -105,7 +105,7 @@ class EpsagonAwsHandler < Seahorse::Client::Handler
                 end
                 record
               end
-              span.set_attribute('aws.sqs.record', JSON.dump(messages_attributes)) if messages_attributes
+              span.set_mapping_attribute('aws.sqs.record', messages_attributes) if messages_attributes
             end
             if context.operation.name == 'ReceiveMessage'
               messages_attributes = result.messages.map do |m|
@@ -123,7 +123,7 @@ class EpsagonAwsHandler < Seahorse::Client::Handler
                 end 
                 record
               end
-              span.set_attribute('aws.sqs.record', JSON.dump(messages_attributes)) if messages_attributes
+              span.set_mapping_attribute('aws.sqs.record', messages_attributes) if messages_attributes
             end
           elsif attributes['aws.service'] == 'sns'
             span.set_attribute('aws.sns.message_id', result.message_id) if context.operation.name == 'Publish'

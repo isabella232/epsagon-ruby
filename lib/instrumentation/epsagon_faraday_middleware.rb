@@ -38,7 +38,7 @@ class EpsagonFaradayMiddleware < ::Faraday::Middleware
       attributes.merge!(Util.epsagon_query_attributes(env.url.query))
       attributes.merge!({
         'http.request.path_params' => path_params,
-        'http.request.headers' => env.request_headers.to_json,
+        'http.request.headers' => Hash[env.request_headers],
         'http.request.body' => env.body,
         'http.request.headers.User-Agent' => env.request_headers['User-Agent']
       })
@@ -67,7 +67,7 @@ class EpsagonFaradayMiddleware < ::Faraday::Middleware
     span.set_attribute('http.status_code', response.status)
 
     unless config[:epsagon][:metadata_only]
-      span.set_attribute('http.response.headers', response.headers.to_json)
+      span.set_attribute('http.response.headers', Hash[env.response.headers])
       span.set_attribute('http.response.body', response.body)
     end
     span.status = OpenTelemetry::Trace::Status.http_to_status(

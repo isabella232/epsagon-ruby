@@ -26,7 +26,7 @@ Bundler.require
 module Epsagon
   DEFAULT_BACKEND = 'opentelemetry.tc.epsagon.com:443/traces'
   DEFAULT_IGNORE_DOMAINS = ['newrelic.com'].freeze
-  MUTABLE_CONF_KEYS = Set.new([:metadata_only, :max_attribute_size, :ignore_domains])
+  MUTABLE_CONF_KEYS = Set.new([:metadata_only, :max_attribute_size, :ignore_domains, :ignored_keys]) 
 
   @@epsagon_config = nil
 
@@ -46,17 +46,25 @@ module Epsagon
     Util.validate_value(config, :app_name, 'Must be a String') {|v| (v.is_a? String) && (v.size > 0) }
     Util.validate_value(config, :max_attribute_size, 'Must be an Integer') {|v| v.is_a? Integer}
     Util.validate_value(config, :ignore_domains, 'Must be iterable') {|v| v.respond_to?(:each)}
-    Util.validate_value(config, :ignore_domains, 'Must be iterable') {|v| v.respond_to?(:each)}
+    Util.validate_value(config, :ignored_keys, 'Must be iterable') {|v| v.respond_to?(:each)}
   end
 
   def set_config(**args)
     unless args.keys.all? {|a| MUTABLE_CONF_KEYS.include?(a)}
-      raise ArgumentError("only #{MUTABLE_CONF_KEYS.to_a} are mutable after `Epsagon.init`")
+      raise ArgumentError.new("only #{MUTABLE_CONF_KEYS.to_a} are mutable after `Epsagon.init`")
     end
     Epsagon.init unless @@initialized
     new_conf = get_config.merge(args)
     validate(new_conf)
     @@epsagon_config = new_conf
+  end
+
+  def add_ignored_key(key)
+    get_config[:ignored_keys].push(key).uniq
+  end
+
+  def remove_ignored_key(key)
+    get_config[:ignored_keys].delete(key)
   end
 
   def get_config
@@ -67,7 +75,8 @@ module Epsagon
       app_name: ENV['EPSAGON_APP_NAME'] || '',
       max_attribute_size: ENV['EPSAGON_MAX_ATTRIBUTE_SIZE'] || 5000,
       backend: ENV['EPSAGON_BACKEND'] || DEFAULT_BACKEND,
-      ignore_domains: ENV['EPSAGON_IGNORE_DOMAINS'] || DEFAULT_IGNORE_DOMAINS
+      ignore_domains: ENV['EPSAGON_IGNORE_DOMAINS']&.split(',') || DEFAULT_IGNORE_DOMAINS,
+      ignored_keys: ENV['EPSAGON_IGNORED_KEYS']&.split(',') || []
     }
   end
 
@@ -134,10 +143,15 @@ module SpanExtension
 
   BLANKS = [nil, [], '']
 
+  def set_mapping_attribute(key, value)
+    value = Util.prepare_attr(key, value, Epsagon.get_config[:max_attribute_size], Epsagon.get_config[:ignored_keys])
+    set_attribute(key, value) if value
+  end
+
   def set_attribute(key, value)
     unless BLANKS.include?(value)
-      value = Util.trim_attr(value, Epsagon.get_config[:max_attribute_size])
-      super(key, value)
+      value = Util.prepare_attr(key, value, Epsagon.get_config[:max_attribute_size], Epsagon.get_config[:ignored_keys])
+      super(key, value) if value
     end
   end
 
@@ -145,8 +159,9 @@ module SpanExtension
     super(*args)
     if @attributes
       @attributes = Hash[@attributes.select {|k,v| not BLANKS.include? v}.map { |k,v|
-        [k, Util.trim_attr(v, Epsagon.get_config[:max_attribute_size])]
-      }]
+        v = Util.prepare_attr(k, v, Epsagon.get_config[:max_attribute_size], Epsagon.get_config[:ignored_keys])
+        [k, v] if v
+      }.compact]
     end
   end
 end

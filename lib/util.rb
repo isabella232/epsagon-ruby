@@ -16,6 +16,30 @@ module Util
     end
   end
 
+
+  def self.remove_key_recursive(h, key) 
+    dot_idx = key.index('.')
+    if not dot_idx.nil?
+      next_hash = h[key[0..dot_idx - 1]]
+      self.remove_key_recursive(next_hash, key[dot_idx + 1..-1]) if next_hash
+    else
+      h.delete(key)
+    end
+  end
+
+  def self.prepare_attr(key, value, max_size, excluded_keys)
+    return nil if excluded_keys.include? key
+    return self.trim_attr(value, max_size) unless value.instance_of? Hash
+    value = value.dup
+    excluded_keys.each do |ekey|
+      if ekey.start_with? (key + '.')
+        rest_of_key = ekey[key.size + 1..-1]
+        self.remove_key_recursive(value, rest_of_key)
+      end
+    end
+    return self.trim_attr(JSON.dump(value), max_size)
+  end
+
   def self.trim_attr(value, max_size)
   	if value.instance_of? Array then 
   		current_size = 2
