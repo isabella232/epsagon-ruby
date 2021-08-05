@@ -22,7 +22,10 @@ jobs:
           POSTGRES_PASSWORD: 'postgres'
         ports:
            - 5432:5432
-
+      httpbin:
+        image: kennethreitz/httpbin
+        ports:
+          - 80:80
     steps:
       - uses: actions/checkout@v1
       - uses: ruby/setup-ruby@v1
