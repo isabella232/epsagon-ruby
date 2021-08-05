@@ -2,6 +2,7 @@
 
 require_relative '../util'
 require_relative '../epsagon_constants'
+require 'json/ext'
 
 require 'faraday'
 

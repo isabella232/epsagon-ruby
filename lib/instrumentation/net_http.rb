@@ -22,11 +22,12 @@ module EpsagonNetHTTPExtension
     attributes = Hash[OpenTelemetry::Common::HTTP::ClientContext.attributes]
     path_with_params, query = req.path.split('?')
     path, path_params = path_with_params.split(';')
+
     attributes.merge!({
                         'type' => 'http',
                         'operation' => req.method,
                         'http.scheme' => USE_SSL_TO_SCHEME[use_ssl?],
-                        'http.request.path' => path
+                        'http.request.path' => URI(path).path
                       })
 
     unless config[:epsagon][:metadata_only]
@@ -39,6 +40,7 @@ module EpsagonNetHTTPExtension
                         })
       attributes.merge!(Util.epsagon_query_attributes(query))
     end
+
     tracer.in_span(
       @address,
       attributes: attributes,

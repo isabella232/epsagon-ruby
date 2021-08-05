@@ -5,6 +5,8 @@ require 'faraday'
 require_relative '../lib/instrumentation/faraday'
 require 'byebug'
 
+# This Test Suite requires the following Docker container to run
+# docker run -p 80:80 -p 443:443 kennethreitz/httpbin
 describe 'Faraday::Middlewares::TracerMiddleware' do
   let(:instrumentation) { EpsagonFaradayInstrumentation.instance }
   let(:exporter) { EXPORTER }
@@ -27,15 +29,15 @@ describe 'Faraday::Middlewares::TracerMiddleware' do
     }
   end
 
-  let(:client) do
-    ::Faraday.new('http://username:password@example.com') do |builder|
-      builder.adapter(:test) do |stub|
-        stub.get('/success') { |_| [200, {}, 'OK'] }
-        stub.get('/failure') { |_| [500, {}, 'OK'] }
-        stub.get('/not_found') { |_| [404, {}, 'OK'] }
-      end
-    end
-  end
+  # let(:client) do
+  #   ::Faraday.new('http://username:password@example.com') do |builder|
+  #     builder.adapter(:test) do |stub|
+  #       stub.get('/success') { |_| [200, {}, 'OK'] }
+  #       stub.get('/failure') { |_| [500, {}, 'OK'] }
+  #       stub.get('/not_found') { |_| [404, {}, 'OK'] }
+  #     end
+  #   end
+  # end
 
   before do
     exporter.reset
@@ -58,13 +60,14 @@ describe 'Faraday::Middlewares::TracerMiddleware' do
     end
 
     before do
-      client.get('/success', headers)
+      Faraday.get('http://localhost/status/200', headers)
     end
 
     include_examples 'HTTP Request with metadata_only' do
+      let(:host)        { 'localhost' }
       let(:operation)   { 'GET' }
       let(:status_code) { 200 }
-      let(:path)        { '/success' }
+      let(:path)        { '/status/200' }
     end
   end
 
@@ -80,26 +83,28 @@ describe 'Faraday::Middlewares::TracerMiddleware' do
 
     context 'without query parameters' do
       before do
-        client.get('/success', nil, headers)
+        Faraday.get('http://localhost/status/200', nil, headers)
       end
 
       include_examples 'HTTP Request with metadata_only: false' do
+        let(:host)          { 'localhost' }
         let(:operation)     { 'GET' }
         let(:status_code)   { 200 }
-        let(:path)          { '/success' }
+        let(:path)          { '/status/200' }
       end
       include_examples 'HTTP Request without query params'
     end
 
     context 'with query parameters' do
       before do
-        client.get('/success?debug=true', nil, headers)
+        Faraday.get('http://localhost/status/200?debug=true', nil, headers)
       end
 
       include_examples 'HTTP Request with metadata_only: false' do
+        let(:host)          { 'localhost' }
         let(:operation)     { 'GET' }
         let(:status_code)   { 200 }
-        let(:path)          { '/success' }
+        let(:path)          { '/status/200' }
       end
       include_examples 'HTTP Request with query params'
     end
@@ -120,13 +125,14 @@ describe 'Faraday::Middlewares::TracerMiddleware' do
         end
 
         before do
-          client.get('/not_found')
+          Faraday.get('http://localhost/status/404')
         end
 
         include_examples 'HTTP Request with metadata_only' do
+          let(:host)        { 'localhost' }
           let(:operation)   { 'GET' }
           let(:status_code) { 404 }
-          let(:path)        { '/not_found' }
+          let(:path)        { '/status/404' }
         end
       end
 
@@ -140,13 +146,14 @@ describe 'Faraday::Middlewares::TracerMiddleware' do
           }
         end
         before do
-          client.get('/not_found')
+          Faraday.get('http://localhost/status/404')
         end
 
         include_examples 'HTTP Request with metadata_only: false' do
+          let(:host)        { 'localhost' }
           let(:operation)   { 'GET' }
           let(:status_code) { 404 }
-          let(:path)        { '/not_found' }
+          let(:path)        { '/status/404' }
         end
         include_examples 'HTTP Request without query params'
       end
@@ -163,13 +170,14 @@ describe 'Faraday::Middlewares::TracerMiddleware' do
           }
         end
         before do
-          client.get('/failure')
+          Faraday.get('http://localhost/status/500')
         end
 
         include_examples 'HTTP Request with metadata_only' do
+          let(:host)        { 'localhost' }
           let(:operation)   { 'GET' }
           let(:status_code) { 500 }
-          let(:path)        { '/failure' }
+          let(:path)        { '/status/500' }
         end
       end
 
@@ -183,13 +191,14 @@ describe 'Faraday::Middlewares::TracerMiddleware' do
           }
         end
         before do
-          client.get('/failure')
+          Faraday.get('http://localhost/status/500')
         end
 
         include_examples 'HTTP Request with metadata_only: false' do
+          let(:host)        { 'localhost' }
           let(:operation)   { 'GET' }
           let(:status_code) { 500 }
-          let(:path)        { '/failure' }
+          let(:path)        { '/status/500' }
         end
         include_examples 'HTTP Request without query params'
       end

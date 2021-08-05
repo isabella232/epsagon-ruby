@@ -1,5 +1,6 @@
 # This Shared Example expects three parameters
 # include_examples 'HTTP Request with metadata_only' do
+#   let(:host)        { 'localhost' }
 #   let(:operation)   { 'GET' }
 #   let(:status_code) { 200 }
 #   let(:path)        { '/success' }
@@ -10,7 +11,7 @@ RSpec.shared_examples 'HTTP Request with metadata_only' do
   end
 
   it 'has the correct span name' do
-    expect(span.name).to eq 'example.com'
+    expect(span.name).to eq host
   end
 
   it 'has "operation" set' do
@@ -69,6 +70,7 @@ end
 
 # This Shared Example expects three parameters
 # include_examples 'HTTP Request with metadata_only' do
+#   let(:host)          { 'localhost' }
 #   let(:operation)     { 'GET' }
 #   let(:status_code)   { 200 }
 #   let(:path)          { '/success' }
@@ -79,7 +81,7 @@ RSpec.shared_examples 'HTTP Request with metadata_only: false' do
   end
 
   it 'has the correct span name' do
-    expect(span.name).to eq 'example.com'
+    expect(span.name).to eq host
   end
 
   it 'has "operation" set' do
