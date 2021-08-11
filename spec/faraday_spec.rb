@@ -29,16 +29,6 @@ describe 'Faraday::Middlewares::TracerMiddleware' do
     }
   end
 
-  # let(:client) do
-  #   ::Faraday.new('http://username:password@example.com') do |builder|
-  #     builder.adapter(:test) do |stub|
-  #       stub.get('/success') { |_| [200, {}, 'OK'] }
-  #       stub.get('/failure') { |_| [500, {}, 'OK'] }
-  #       stub.get('/not_found') { |_| [404, {}, 'OK'] }
-  #     end
-  #   end
-  # end
-
   before do
     exporter.reset
     instrumentation.instance_variable_set(:@config, nil)
