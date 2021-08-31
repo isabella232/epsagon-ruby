@@ -76,11 +76,9 @@ class EpsagonRackMiddleware
 
   def call(env)
     original_env = env.dup
-    extracted_context = OpenTelemetry.propagation.http.extract(env)
-    frontend_context = create_frontend_span(env, extracted_context)
 
     # restore extracted context in this process:
-    OpenTelemetry::Context.with_current(frontend_context || extracted_context) do
+    OpenTelemetry::Context.with_current(OpenTelemetry.propagation.http.extract(env)) do
       request_span_name = create_request_span_name(env['REQUEST_URI'] || original_env['PATH_INFO'])
       tracer.in_span(env['HTTP_HOST'] || 'unknown',
                      attributes: request_span_attributes(env: env),
@@ -98,27 +96,9 @@ class EpsagonRackMiddleware
         end
       end
     end
-  ensure
-    finish_span(frontend_context)
   end
 
   private
-
-  # return Context with the frontend span as the current span
-  def create_frontend_span(env, extracted_context)
-    request_start_time = QueueTime.get_request_start(env)
-
-    return unless config[:record_frontend_span] && !request_start_time.nil?
-
-    span = tracer.start_span('http_server.proxy',
-                             with_parent: extracted_context,
-                             attributes: {
-                               'start_time' => request_start_time.to_f
-                             },
-                             kind: :server)
-
-    OpenTelemetry::Trace.context_with_span(span, parent_context: extracted_context)
-  end
 
   def finish_span(context)
     OpenTelemetry::Trace.current_span(context).finish if context
